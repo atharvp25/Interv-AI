@@ -1,0 +1,36 @@
+# ── Environment & Secrets (NEVER COMMIT) ───────────────────
+.env
+.env.local
+*.env
+
+# ── Python & Virtual Environments ─────────────────────────
+.venv/
+venv/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+
+# ── Node & Frontend Artifacts ──────────────────────────────
+node_modules/
+frontend/node_modules/
+frontend/dist/
+.eslintcache
+
+# ── Runtime Storage & Ephemeral Data ───────────────────────
+server/storage/temp/*
+!server/storage/temp/.gitkeep
+*.log
+
+# ── OS & IDE metadata ─────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+#docs and content 
+Content/
+docs/

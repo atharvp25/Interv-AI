@@ -1,0 +1,6 @@
+Position: Software Engineer / Data Scientist
+Required Skills: Python, SQL, Machine Learning, Data Structures & Algorithms, REST APIs, System Design.
+Responsibilities:
+- Build and maintain scalable backend services and data pipelines.
+- Develop and deploy machine learning models in production.
+- Collaborate with cross-functional teams to deliver high quality solutions.
