@@ -50,3 +50,28 @@ After the coding question is done, briefly evaluate the candidate and call `subm
 INTERVIEW_INSTRUCTIONS = INTERVIEW_INSTRUCTIONS_TEST
 # INTERVIEW_INSTRUCTIONS = INTERVIEW_INSTRUCTIONS_PROD
 
+
+# ── Static Warm Greetings & Farewells (Zero-LLM Latency & Token Saver) ────────
+import random
+
+GREETINGS_POOL = [
+    "Namaste! Welcome to your interview. Main aapka AI interviewer hoon. Shuru karne se pehle, please apna naam bataiye?",
+    "Hello! IntervAI platform par aapka swagat hai. Main aaj aapka assessment loonga. Kya aap apna naam share karenge?",
+    "Welcome to the session! Main aapka AI interviewer hoon. To get started, could you please tell me your name?",
+    "Namaste! Aaj ke voice assessment mein aapka swagat hai. Let's begin — please introduce yourself with your name.",
+    "Hello and welcome! I am your AI assessment interviewer today. Before we begin, may I know your full name?",
+]
+
+FAREWELLS_POOL = [
+    "Dhanyawaad! Aapka interview successfully complete ho gaya hai aur aapka evaluation submit ho chuka hai. Have a great day!",
+    "Thank you so much! Aapka assessment finish ho gaya hai. Aap dashboard par apna report dekh sakte hain. Goodbye!",
+    "Shukriya! Humne aapke answers record kar liye hain aur evaluation save ho gaya hai. All the best for your results!",
+]
+
+def get_random_greeting() -> str:
+    return random.choice(GREETINGS_POOL)
+
+def get_random_farewell() -> str:
+    return random.choice(FAREWELLS_POOL)
+
+
