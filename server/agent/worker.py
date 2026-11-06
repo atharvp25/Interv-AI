@@ -13,10 +13,10 @@ if str(BASE_DIR) not in sys.path:
 import google.generativeai as genai
 from livekit import agents
 from livekit.agents import Agent, AgentServer, AgentSession, JobContext, room_io
-from livekit.plugins import noise_cancellation, silero, deepgram, cartesia, google
+from livekit.plugins import noise_cancellation, silero, google, gnani, deepgram, cartesia
 
-from server.config import GEMINI_API_KEY
-from server.agent.prompts import INTERVIEW_INSTRUCTIONS
+from server.config import GEMINI_API_KEY, GNANI_API_KEY
+from server.agent.prompts import INTERVIEW_INSTRUCTIONS, get_random_greeting
 from server.agent.tools import AssistantFnc
 from server.services.jd_parser import load_jd
 
@@ -48,11 +48,14 @@ async def entrypoint(ctx: JobContext):
     if GEMINI_API_KEY:
         genai.configure(api_key=GEMINI_API_KEY)
 
-    # Configure the voice pipeline: STT -> LLM -> TTS
+    # Configure the speech pipeline: Gnani Prisma STT -> Gemini LLM -> Gnani Timbre TTS
+    stt_plugin = gnani.STT(language="indic-auto", api_key=GNANI_API_KEY) if GNANI_API_KEY else deepgram.STT()
+    tts_plugin = gnani.TTS(voice="Nalini", model="timbre-v2.5", language="hi-IN", api_key=GNANI_API_KEY) if GNANI_API_KEY else cartesia.TTS()
+
     session = AgentSession(
-        stt=deepgram.STT(),                          # Listening via Deepgram directly
+        stt=stt_plugin,                              # Listening via Gnani Prisma (indic-auto)
         llm=google.LLM(),                            # Brain via Gemini directly
-        tts=cartesia.TTS(),                          # Speaking via Cartesia directly
+        tts=tts_plugin,                              # Speaking via Gnani Timbre (Nalini)
         vad=silero.VAD.load(),                       # Voice activity detection (local)
         tools=[fnc],                                 # Inject Tool Calling
         min_endpointing_delay=0.3,                   # React 300ms after user stops
@@ -190,8 +193,10 @@ async def entrypoint(ctx: JobContext):
         ),
     )
 
+    initial_greeting = get_random_greeting()
+    logger.info(f"Speaking initial greeting (Zero-LLM latency): {initial_greeting}")
     session.say(
-        "Hello! Welcome to your interview. I'm your AI interviewer today. To get started, could you please tell me your name?",
+        initial_greeting,
         allow_interruptions=True,
     )
 
