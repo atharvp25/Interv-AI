@@ -21,8 +21,8 @@ frontend/dist/
 .eslintcache
 
 # ── Runtime Storage & Ephemeral Data ───────────────────────
-server/storage/temp/*
-!server/storage/temp/.gitkeep
+data/temp/*
+!data/temp/.gitkeep
 *.log
 
 # ── OS & IDE metadata ─────────────────────────────────────
