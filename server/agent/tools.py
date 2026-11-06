@@ -3,9 +3,7 @@ import json
 import logging
 import datetime
 from livekit.agents import llm
-from motor.motor_asyncio import AsyncIOMotorClient
-
-from server.config import MONGODB_URI
+from server.database import db
 
 logger = logging.getLogger(__name__)
 
@@ -63,8 +61,6 @@ class AssistantFnc(llm.Toolset):
         self._submitted = True
 
         logger.info(f"Submitting evaluation for user: {self.username}")
-        client = AsyncIOMotorClient(MONGODB_URI)
-        db = client.voice_agent_db
         
         latest_jd = await db.jd_files.find_one(
             {"username": self.username},
