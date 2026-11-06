@@ -1,9 +1,13 @@
 import os
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
-from server.config import LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET, FRONTEND_DIST_DIR
+from server.config import (
+    LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET,
+    FRONTEND_DIST_DIR, STORAGE_DIR, STORAGE_TEMP_DIR,
+)
 from server.api.auth import router as auth_router
 from server.api.interviews import router as interviews_router
 from server.api.uploads import router as uploads_router
@@ -12,8 +16,17 @@ from server.api.uploads import router as uploads_router
 if not LIVEKIT_API_KEY or not LIVEKIT_API_SECRET or not LIVEKIT_URL:
     raise ValueError("LIVEKIT_URL, LIVEKIT_API_KEY, and LIVEKIT_API_SECRET must be set in the .env file")
 
+# ── Application Lifespan (Startup & Shutdown) ────────────────────────────────
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: safely ensure runtime storage directories exist
+    STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+    STORAGE_TEMP_DIR.mkdir(parents=True, exist_ok=True)
+    yield
+    # Shutdown: clean up any hanging connections if needed
+
 # ── Create app ───────────────────────────────────────────────────────────────
-app = FastAPI(title="IntervAI API")
+app = FastAPI(title="IntervAI API", lifespan=lifespan)
 
 # CORS
 app.add_middleware(
