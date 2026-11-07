@@ -16,11 +16,14 @@ from livekit.agents import Agent, AgentServer, AgentSession, JobContext, room_io
 from livekit.plugins import noise_cancellation, silero, google, gnani, deepgram, cartesia
 
 from server.config import GEMINI_API_KEY, GNANI_API_KEY
+from server.agent.gnani_prisma import PrismaV3STT, resolve_language_profile
 from server.agent.prompts import INTERVIEW_INSTRUCTIONS, get_random_greeting
 from server.agent.tools import AssistantFnc
 from server.services.jd_parser import load_jd
 
 logger = logging.getLogger(__name__)
+
+AGENT_NAME = "intervai-agent"
 
 
 # Define your agent's behavior
@@ -34,13 +37,32 @@ class Assistant(Agent):
 server = AgentServer()
 
 
-# The entrypoint function runs when a participant joins the room
-@server.rtc_session()
+# The entrypoint function runs when a participant joins the room with Named Dispatch
+@server.rtc_session(agent_name=AGENT_NAME)
 async def entrypoint(ctx: JobContext):
-    
-    username = "unknown"
-    if ctx.room.name.startswith("interview-"):
+    # 1. Parse structured metadata from Named Agent Dispatch (with room name fallback)
+    metadata: dict = {}
+    if ctx.job and ctx.job.metadata:
+        try:
+            metadata = json.loads(ctx.job.metadata)
+        except Exception as e:
+            logger.warning(f"Failed to parse job metadata JSON: {e}")
+
+    username = metadata.get("username") or "unknown"
+    if username == "unknown" and ctx.room.name.startswith("interview-"):
         username = ctx.room.name.split("-", 1)[1]
+
+    language_key = metadata.get("language", "hinglish")
+    track = metadata.get("track", "tech")
+    custom_keywords = metadata.get("keywords") or [
+        "IntervAI", "Python", "SQL", "FastAPI", "LiveKit", "Machine Learning", "ROI", "B2B", "CRM"
+    ]
+
+    lang_profile = resolve_language_profile(language_key)
+    logger.info(
+        f"Starting IntervAI session | user={username} | track={track} | "
+        f"lang={language_key} ({lang_profile['label']})"
+    )
 
     # Create tool instance (extracted so evaluate_code_with_gemini can access it)
     fnc = AssistantFnc(username=username, room=ctx.room)
@@ -48,14 +70,30 @@ async def entrypoint(ctx: JobContext):
     if GEMINI_API_KEY:
         genai.configure(api_key=GEMINI_API_KEY)
 
-    # Configure the speech pipeline: Gnani Prisma STT -> Gemini LLM -> Gnani Timbre TTS
-    stt_plugin = gnani.STT(language="indic-auto", api_key=GNANI_API_KEY) if GNANI_API_KEY else deepgram.STT()
-    tts_plugin = gnani.TTS(voice="Nalini", model="timbre-v2.5", language="hi-IN", api_key=GNANI_API_KEY) if GNANI_API_KEY else cartesia.TTS()
+    # Configure the speech pipeline: Gnani Prisma v3.0 STT -> Gemini LLM -> Gnani Timbre TTS
+    if GNANI_API_KEY:
+        stt_plugin = PrismaV3STT(
+            language=lang_profile["stt_lang"],
+            language_candidates=lang_profile["candidates"],
+            keywords=custom_keywords,
+            stream_format=lang_profile["format"],
+            model="prisma-v3.0",
+            api_key=GNANI_API_KEY,
+        )
+        tts_plugin = gnani.TTS(
+            voice=lang_profile["tts_voice"],
+            model="timbre-v2.5",
+            language=lang_profile["tts_lang"],
+            api_key=GNANI_API_KEY,
+        )
+    else:
+        stt_plugin = deepgram.STT()
+        tts_plugin = cartesia.TTS()
 
     session = AgentSession(
-        stt=stt_plugin,                              # Listening via Gnani Prisma (indic-auto)
-        llm=google.LLM(),                            # Brain via Gemini directly
-        tts=tts_plugin,                              # Speaking via Gnani Timbre (Nalini)
+        stt=stt_plugin,                              # Listening via Gnani Prisma v3.0 (indic-auto + keyterms)
+        llm=google.LLM(api_key=GEMINI_API_KEY),      # Brain via Gemini directly (explicit api_key)
+        tts=tts_plugin,                              # Speaking via Gnani Timbre v2.5 (Nalini)
         vad=silero.VAD.load(),                       # Voice activity detection (local)
         tools=[fnc],                                 # Inject Tool Calling
         min_endpointing_delay=0.3,                   # React 300ms after user stops

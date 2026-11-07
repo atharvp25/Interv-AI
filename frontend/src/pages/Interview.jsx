@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { 
   LiveKitRoom, 
   RoomAudioRenderer,
@@ -19,6 +19,7 @@ export default function Interview() {
   const [url, setUrl] = useState('')
   const [error, setError] = useState('')
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { token: jwtToken, user } = useContext(AuthContext)
   
   const [isCodeEditorOpen, setIsCodeEditorOpen] = useState(false)
@@ -28,9 +29,19 @@ export default function Interview() {
       try {
         const roomName = `interview-${user?.username || 'guest'}`
         const identity = `Candidate_${Math.floor(Math.random() * 10000)}`
+        const language = searchParams.get('lang') || localStorage.getItem('intervai_lang') || 'hinglish'
+        const track = searchParams.get('track') || localStorage.getItem('intervai_track') || 'tech'
+        const sessionId = searchParams.get('session') || localStorage.getItem('intervai_session') || ''
         
         const baseUrl = window.location.hostname === 'localhost' ? 'http://127.0.0.1:8000' : ''
-        const res = await fetch(`${baseUrl}/api/token?room=${roomName}&identity=${identity}`, {
+        const query = new URLSearchParams({
+          room: roomName,
+          identity,
+          language,
+          track,
+          session_id: sessionId,
+        })
+        const res = await fetch(`${baseUrl}/api/token?${query.toString()}`, {
           headers: {
             'Authorization': `Bearer ${jwtToken}`
           }
@@ -80,7 +91,11 @@ export default function Interview() {
       serverUrl={url}
       token={token}
       connect={true}
-      audio={true}
+      audio={{
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      }}
       video={false}
       className="interview-container animate-in"
       onDisconnected={() => navigate('/setup')}

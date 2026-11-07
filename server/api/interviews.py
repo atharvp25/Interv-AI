@@ -1,3 +1,4 @@
+import json
 import jwt
 from fastapi import APIRouter, HTTPException, Query, Depends
 from fastapi.responses import StreamingResponse
@@ -11,15 +12,28 @@ from server.services.report_generator import generate_evaluation_pdf
 
 router = APIRouter(prefix="/api", tags=["interviews"])
 
+AGENT_NAME = "intervai-agent"
+
 
 @router.get("/token")
 def get_token(
     room: str = Query(..., description="The name of the room to join"),
     identity: str = Query(..., description="Unique identity for the participant"),
+    language: str = Query("hinglish", description="Interview language key (e.g. hinglish, hi-IN, mr-IN, ta-IN)"),
+    track: str = Query("tech", description="Interview track (tech or bda)"),
+    session_id: str = Query("", description="Optional MongoDB interview session ID"),
     current_user: dict = Depends(get_current_user)
 ):
     try:
-        # Create token with appropriate grants
+        # Structured dispatch metadata embedded in the JWT RoomConfiguration
+        dispatch_metadata = json.dumps({
+            "username": current_user["username"],
+            "language": language,
+            "track": track,
+            "session_id": session_id,
+        })
+
+        # Create token with appropriate grants AND named single-agent dispatch
         token = (
             api.AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET)
             .with_identity(identity)
@@ -33,9 +47,25 @@ def get_token(
                     can_publish_data=True
                 )
             )
+            .with_room_config(
+                api.RoomConfiguration(
+                    agents=[
+                        api.RoomAgentDispatch(
+                            agent_name=AGENT_NAME,
+                            metadata=dispatch_metadata,
+                        )
+                    ]
+                )
+            )
             .to_jwt()
         )
-        return {"token": token, "url": LIVEKIT_URL}
+        return {
+            "token": token,
+            "url": LIVEKIT_URL,
+            "agent_name": AGENT_NAME,
+            "language": language,
+            "track": track,
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
