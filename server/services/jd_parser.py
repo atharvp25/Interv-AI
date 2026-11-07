@@ -1,5 +1,135 @@
 import os
+import re
+from typing import Any
+from bson import ObjectId
 from server.config import STORAGE_DIR, UPLOADED_JD_PATH
+from server.database import db
+
+# Curated High-Signal Keywords for Indian Technical & Sales Roles
+CURATED_TECH_KEYWORDS = [
+    "Python", "FastAPI", "Docker", "Kubernetes", "PostgreSQL", "MongoDB", "SQL",
+    "Machine Learning", "Deep Learning", "TensorFlow", "PyTorch", "REST API",
+    "Microservices", "Git", "CI/CD", "Redis", "Kafka", "Data Science", "OOP",
+    "Data Structures", "Algorithms", "LiveKit", "WebRTC", "LLM", "Prompt Engineering"
+]
+
+CURATED_BDA_KEYWORDS = [
+    "B2B", "B2C", "Cold Calling", "Lead Generation", "Objection Handling",
+    "Sales Pipeline", "Customer Acquisition", "CAC", "LTV", "CRM", "Salesforce",
+    "Pitch", "Negotiation", "Quota", "Revenue", "Deal Size", "Consultative Selling",
+    "BFSI", "CASA", "KYC", "Cross-selling", "Upselling", "ROI", "Conversion Rate"
+]
+
+DEFAULT_TECH_JD = """
+Role: Python & AI Engineer
+Requirements:
+- Strong proficiency in Python, FastAPI, and RESTful API architecture.
+- Hands-on experience with SQL, PostgreSQL, or MongoDB.
+- Solid understanding of Data Structures, Algorithms, and System Design.
+- Familiarity with Machine Learning concepts, LLMs, and real-time streaming (LiveKit / WebRTC).
+- Ability to write clean, modular, and maintainable code.
+"""
+
+DEFAULT_BDA_JD = """
+Role: Business Development Associate (BDA) / Enterprise Sales Executive
+Requirements:
+- Proven experience in outbound cold calling, lead generation, and B2B consultative sales.
+- Exceptional objection handling and persuasion skills under pressure.
+- Deep understanding of sales pipeline management, CRM workflows, and deal closing.
+- Ability to pitch complex SaaS / BFSI products and clearly demonstrate business ROI.
+- Fluency in communicating across English, Hindi, and regional languages.
+"""
+
+
+def extract_keywords_from_text(text: str, max_keywords: int = 50) -> list[str]:
+    """Fast, zero-LLM keyword extractor to boost Gnani Prisma v3.0 STT accuracy.
+    
+    Extracts high-signal domain terms, acronyms (e.g. B2B, SaaS, SQL, ROI),
+    and CamelCase frameworks without consuming any API tokens or latency.
+    """
+    if not text:
+        return CURATED_TECH_KEYWORDS[:20]
+
+    extracted = set()
+
+    # 1. Match uppercase acronyms (2-6 chars: B2B, API, SQL, SaaS, CRM, ROI, KYC)
+    acronyms = re.findall(r"\b[A-Z0-9]{2,6}\b", text)
+    for acr in acronyms:
+        if not acr.isdigit() and len(acr) >= 2:
+            extracted.add(acr)
+
+    # 2. Match CamelCase / PascalCase names (e.g. FastAPI, PostgreSQL, TensorFlow)
+    camel_cases = re.findall(r"\b[A-Z][a-z]+(?:[A-Z][a-z0-9]+)+\b", text)
+    for cc in camel_cases:
+        extracted.add(cc)
+
+    # 3. Match from known high-signal curated dictionaries
+    for kw in CURATED_TECH_KEYWORDS + CURATED_BDA_KEYWORDS:
+        if re.search(r"\b" + re.escape(kw) + r"\b", text, re.IGNORECASE):
+            extracted.add(kw)
+
+    # Filter out common stop words and generic short noise
+    stop_words = {"AND", "FOR", "THE", "WITH", "THAT", "THIS", "FROM", "HAVE", "WILL", "YOUR", "NOT", "ARE"}
+    filtered = [k for k in extracted if k.upper() not in stop_words]
+
+    # Limit to top max_keywords
+    return filtered[:max_keywords] if filtered else CURATED_TECH_KEYWORDS[:20]
+
+
+async def get_interview_session_context(
+    session_id: str = "",
+    username: str = "",
+    track: str = "tech",
+    language: str = "hinglish"
+) -> dict[str, Any]:
+    """Retrieve the exact interview context (JD text, track, language, and boosted keywords)
+    from MongoDB. Falls back gracefully to curated defaults with zero credit cost.
+    """
+    session_doc = None
+
+    # 1. Attempt lookup by session_id
+    if session_id and ObjectId.is_valid(session_id):
+        try:
+            session_doc = await db.interview_sessions.find_one({"_id": ObjectId(session_id)})
+        except Exception:
+            session_doc = None
+
+    # 2. Fall back to user's most recent session if not found
+    if not session_doc and username and username != "unknown":
+        try:
+            session_doc = await db.interview_sessions.find_one(
+                {"username": username},
+                sort=[("created_at", -1)]
+            )
+        except Exception:
+            session_doc = None
+
+    # 3. If session found in DB, return its exact context
+    if session_doc:
+        jd_text = session_doc.get("jd_text", "").strip()
+        keywords = session_doc.get("keywords") or extract_keywords_from_text(jd_text)
+        return {
+            "session_id": str(session_doc["_id"]),
+            "role_title": session_doc.get("role_title", "Custom Interview Role"),
+            "track": session_doc.get("track", track),
+            "language": session_doc.get("language", language),
+            "jd_text": jd_text if jd_text else (DEFAULT_TECH_JD if track == "tech" else DEFAULT_BDA_JD),
+            "keywords": keywords,
+        }
+
+    # 4. Fall back to curated track defaults
+    is_tech = (track.lower() == "tech")
+    default_text = DEFAULT_TECH_JD if is_tech else DEFAULT_BDA_JD
+    default_kws = CURATED_TECH_KEYWORDS if is_tech else CURATED_BDA_KEYWORDS
+
+    return {
+        "session_id": "",
+        "role_title": "Python & AI Engineer" if is_tech else "Enterprise BDA & Sales",
+        "track": "tech" if is_tech else "bda",
+        "language": language,
+        "jd_text": default_text.strip(),
+        "keywords": default_kws,
+    }
 
 
 def read_file(file_path: str) -> str:

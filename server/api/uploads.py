@@ -12,15 +12,21 @@ from server.config import (
 )
 from server.core.security import get_current_user
 from server.database import db
-from server.services.jd_parser import read_file, save_extracted_jd
+from server.services.jd_parser import read_file, save_extracted_jd, extract_keywords_from_text
 
 router = APIRouter(prefix="/api", tags=["uploads"])
 
 
 @router.post("/upload-jd")
-async def upload_jd(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+async def upload_jd(
+    file: UploadFile = File(...),
+    track: str = Query("tech", description="tech or bda"),
+    language: str = Query("hinglish", description="Selected language"),
+    current_user: dict = Depends(get_current_user)
+):
     """Upload a Job Description file (PDF or TXT).
-    Extracts text and saves it for the agent to use.
+    Extracts text, extracts high-signal domain keywords for Gnani Prisma STT,
+    and creates an isolated interview session document.
     """
     # Validate file extension
     filename = file.filename or "unknown"
@@ -60,18 +66,35 @@ async def upload_jd(file: UploadFile = File(...), current_user: dict = Depends(g
                 detail="Could not extract any text from the file."
             )
 
-        # Save extracted text for the agent (existing pipeline)
-        saved_path = save_extracted_jd(extracted_text)
+        # Save extracted text for local backup
+        save_extracted_jd(extracted_text)
 
-        # Store raw file in MongoDB (parallel pipeline for Dashboard viewing)
-        jd_doc = {
+        # 1. Zero-LLM domain keyterm extraction for Prisma v3.0 boosting
+        keywords = extract_keywords_from_text(extracted_text)
+
+        # 2. Store raw file in MongoDB (for PDF viewing on dashboard)
+        jd_file_doc = {
             "username": current_user["username"],
             "filename": filename,
             "content_type": "application/pdf" if ext == ".pdf" else "text/plain",
             "data": Binary(content),
             "uploaded_at": datetime.datetime.utcnow().isoformat() + "Z"
         }
-        result = await db.jd_files.insert_one(jd_doc)
+        file_result = await db.jd_files.insert_one(jd_file_doc)
+
+        # 3. Create isolated interview session document in MongoDB
+        clean_title = filename.rsplit(".", 1)[0].replace("_", " ").replace("-", " ").title()
+        session_doc = {
+            "username": current_user["username"],
+            "role_title": clean_title,
+            "track": track,
+            "language": language,
+            "jd_text": extracted_text,
+            "keywords": keywords,
+            "jd_file_id": str(file_result.inserted_id),
+            "created_at": datetime.datetime.utcnow().isoformat() + "Z"
+        }
+        session_result = await db.interview_sessions.insert_one(session_doc)
 
         # Generate preview (first 200 characters)
         preview = extracted_text[:200]
@@ -81,9 +104,14 @@ async def upload_jd(file: UploadFile = File(...), current_user: dict = Depends(g
         return {
             "success": True,
             "filename": filename,
+            "role_title": clean_title,
             "preview": preview,
             "characters": len(extracted_text),
-            "jd_id": str(result.inserted_id),
+            "keywords": keywords,
+            "jd_id": str(file_result.inserted_id),
+            "session_id": str(session_result.inserted_id),
+            "track": track,
+            "language": language,
         }
 
     except HTTPException:

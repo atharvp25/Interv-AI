@@ -1,6 +1,7 @@
 import json
+import datetime
 import jwt
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, HTTPException, Query, Depends, Body
 from fastapi.responses import StreamingResponse
 from livekit import api
 from bson import ObjectId
@@ -9,14 +10,81 @@ from server.config import LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET, JWT_
 from server.core.security import get_current_user
 from server.database import db
 from server.services.report_generator import generate_evaluation_pdf
+from server.services.jd_parser import (
+    extract_keywords_from_text,
+    get_interview_session_context,
+    DEFAULT_TECH_JD,
+    DEFAULT_BDA_JD
+)
 
 router = APIRouter(prefix="/api", tags=["interviews"])
 
 AGENT_NAME = "intervai-agent"
 
 
+@router.post("/sessions")
+async def create_interview_session(
+    payload: dict = Body(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Create a configured interview session (from preset or custom text).
+    Returns a session_id that can be shared via candidate links.
+    """
+    track = payload.get("track", "tech")
+    language = payload.get("language", "hinglish")
+    role_title = payload.get("role_title", "Technical Assessment" if track == "tech" else "BDA Sales Role-Play")
+    jd_text = payload.get("jd_text", "").strip()
+
+    if not jd_text:
+        jd_text = DEFAULT_TECH_JD.strip() if track == "tech" else DEFAULT_BDA_JD.strip()
+
+    keywords = extract_keywords_from_text(jd_text)
+
+    doc = {
+        "username": current_user["username"],
+        "role_title": role_title,
+        "track": track,
+        "language": language,
+        "jd_text": jd_text,
+        "keywords": keywords,
+        "created_at": datetime.datetime.utcnow().isoformat() + "Z"
+    }
+    result = await db.interview_sessions.insert_one(doc)
+
+    return {
+        "success": True,
+        "session_id": str(result.inserted_id),
+        "role_title": role_title,
+        "track": track,
+        "language": language,
+        "keywords": keywords,
+    }
+
+
+@router.get("/sessions/{session_id}")
+async def get_session_details(session_id: str):
+    """Retrieve public session configuration for the interview room (no JWT required
+    so candidate links can preview track and role before joining).
+    """
+    if not ObjectId.is_valid(session_id):
+        raise HTTPException(status_code=400, detail="Invalid session ID format")
+
+    doc = await db.interview_sessions.find_one({"_id": ObjectId(session_id)})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Interview session not found")
+
+    return {
+        "session_id": str(doc["_id"]),
+        "role_title": doc.get("role_title", "Interview Session"),
+        "track": doc.get("track", "tech"),
+        "language": doc.get("language", "hinglish"),
+        "keywords_count": len(doc.get("keywords", [])),
+        "creator": doc.get("username", "Recruiter"),
+    }
+
+
 @router.get("/token")
-def get_token(
+async def get_token(
     room: str = Query(..., description="The name of the room to join"),
     identity: str = Query(..., description="Unique identity for the participant"),
     language: str = Query("hinglish", description="Interview language key (e.g. hinglish, hi-IN, mr-IN, ta-IN)"),
@@ -25,12 +93,25 @@ def get_token(
     current_user: dict = Depends(get_current_user)
 ):
     try:
+        # Load verified session context (or track defaults)
+        context = await get_interview_session_context(
+            session_id=session_id,
+            username=current_user["username"],
+            track=track,
+            language=language
+        )
+
+        resolved_track = context.get("track", track)
+        resolved_lang = context.get("language", language)
+        keywords = context.get("keywords", [])
+
         # Structured dispatch metadata embedded in the JWT RoomConfiguration
         dispatch_metadata = json.dumps({
             "username": current_user["username"],
-            "language": language,
-            "track": track,
+            "language": resolved_lang,
+            "track": resolved_track,
             "session_id": session_id,
+            "keywords": keywords,
         })
 
         # Create token with appropriate grants AND named single-agent dispatch
@@ -63,8 +144,9 @@ def get_token(
             "token": token,
             "url": LIVEKIT_URL,
             "agent_name": AGENT_NAME,
-            "language": language,
-            "track": track,
+            "language": resolved_lang,
+            "track": resolved_track,
+            "keywords_count": len(keywords),
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

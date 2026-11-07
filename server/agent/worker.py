@@ -19,7 +19,7 @@ from server.config import GEMINI_API_KEY, GNANI_API_KEY
 from server.agent.gnani_prisma import PrismaV3STT, resolve_language_profile
 from server.agent.prompts import INTERVIEW_INSTRUCTIONS, get_random_greeting
 from server.agent.tools import AssistantFnc
-from server.services.jd_parser import load_jd
+from server.services.jd_parser import get_interview_session_context, load_jd
 
 logger = logging.getLogger(__name__)
 
@@ -52,16 +52,39 @@ async def entrypoint(ctx: JobContext):
     if username == "unknown" and ctx.room.name.startswith("interview-"):
         username = ctx.room.name.split("-", 1)[1]
 
+    session_id = metadata.get("session_id", "")
     language_key = metadata.get("language", "hinglish")
     track = metadata.get("track", "tech")
-    custom_keywords = metadata.get("keywords") or [
-        "IntervAI", "Python", "SQL", "FastAPI", "LiveKit", "Machine Learning", "ROI", "B2B", "CRM"
-    ]
+
+    # 2. Dynamically load the exact Interview Session context from MongoDB
+    try:
+        context = await get_interview_session_context(
+            session_id=session_id,
+            username=username,
+            track=track,
+            language=language_key,
+        )
+        jd_content = context["jd_text"]
+        custom_keywords = metadata.get("keywords") or context.get("keywords") or []
+        track = context.get("track", track)
+        language_key = context.get("language", language_key)
+        role_title = context.get("role_title", "Interview Role")
+    except Exception as e:
+        logger.warning(f"Failed to load MongoDB session context: {e}, falling back to defaults")
+        try:
+            jd_content = load_jd()
+        except Exception:
+            jd_content = "Python, SQL, Machine Learning Engineer Role"
+        custom_keywords = [
+            "IntervAI", "Python", "SQL", "FastAPI", "LiveKit", "Machine Learning", "ROI", "B2B", "CRM"
+        ]
+        role_title = "Technical Assessment"
 
     lang_profile = resolve_language_profile(language_key)
     logger.info(
-        f"Starting IntervAI session | user={username} | track={track} | "
-        f"lang={language_key} ({lang_profile['label']})"
+        f"Starting IntervAI session | user={username} | role={role_title} | "
+        f"track={track} | lang={language_key} ({lang_profile['label']}) | "
+        f"boosted_keywords={len(custom_keywords)}"
     )
 
     # Create tool instance (extracted so evaluate_code_with_gemini can access it)
@@ -205,15 +228,9 @@ async def entrypoint(ctx: JobContext):
         except Exception as e:
             pass
 
-    # Load the Job Description
-    try:
-        jd_content = load_jd()
-    except Exception as e:
-        logger.error(f"Error loading Job Description: {e}")
-        jd_content = "Data Science Role (Python, SQL, Machine Learning)"
-
     custom_instructions = (
         f"{INTERVIEW_INSTRUCTIONS}\n\n"
+        f"INTERVIEW ROLE: {role_title} (Track: {track.upper()})\n"
         f"JOB DESCRIPTION FOR THIS INTERVIEW:\n"
         f"-------------\n"
         f"{jd_content}\n"
