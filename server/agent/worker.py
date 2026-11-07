@@ -10,14 +10,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
-import google.generativeai as genai
+from google import genai
 from livekit import agents
 from livekit.agents import Agent, AgentServer, AgentSession, JobContext, room_io
 from livekit.plugins import noise_cancellation, silero, google, gnani, deepgram, cartesia
 
 from server.config import GEMINI_API_KEY, GNANI_API_KEY
 from server.agent.gnani_prisma import PrismaV3STT, resolve_language_profile
-from server.agent.prompts import INTERVIEW_INSTRUCTIONS, get_random_greeting
+from server.agent.prompts import get_interview_instructions, get_random_greeting
 from server.agent.tools import AssistantFnc
 from server.services.jd_parser import get_interview_session_context, load_jd
 
@@ -90,8 +90,7 @@ async def entrypoint(ctx: JobContext):
     # Create tool instance (extracted so evaluate_code_with_gemini can access it)
     fnc = AssistantFnc(username=username, room=ctx.room)
 
-    if GEMINI_API_KEY:
-        genai.configure(api_key=GEMINI_API_KEY)
+    genai_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
     # Configure the speech pipeline: Gnani Prisma v3.0 STT -> Gemini LLM -> Gnani Timbre TTS
     if GNANI_API_KEY:
@@ -125,7 +124,7 @@ async def entrypoint(ctx: JobContext):
     )
 
     async def evaluate_code_with_gemini(code: str):
-        if not GEMINI_API_KEY:
+        if not genai_client:
             session.say("I received your code, but my evaluation module is not configured.", allow_interruptions=True)
             return
 
@@ -136,14 +135,17 @@ async def entrypoint(ctx: JobContext):
         logger.info(f"Code submission — attempt {current_attempt}/{max_attempts} for user: {username}")
 
         try:
-            model = genai.GenerativeModel("gemini-2.5-flash")
             prompt = (
                 f"The candidate has submitted this code:\n```\n{code}\n```\n"
                 f"Provide a very brief evaluation. If the logic is sound and code is correct, "
                 f"output 'CORRECT'. If incorrect, output 'INCORRECT' followed by a 1-sentence hint on what to fix."
             )
-            response = await asyncio.to_thread(model.generate_content, prompt)
-            feedback = response.text
+            response = await asyncio.to_thread(
+                genai_client.models.generate_content,
+                model="gemini-2.5-flash",
+                contents=prompt,
+            )
+            feedback = response.text or ""
 
             is_correct = "CORRECT" in feedback.upper() and "INCORRECT" not in feedback.upper()
 
@@ -159,7 +161,7 @@ async def entrypoint(ctx: JobContext):
                             f"CANDIDATE SUBMITTED CODE (Attempt {current_attempt}/{max_attempts}). "
                             f"Code Evaluation Report: {feedback}. "
                             f"The code is CORRECT. The code editor has been closed automatically. "
-                            f"Briefly acknowledge and move to the next question."
+                            f"Briefly acknowledge and ask the candidate to explain their logic and complexity orally."
                         )
                     )
                 session.say("I've evaluated your code and it looks correct! Well done.", allow_interruptions=True)
@@ -176,10 +178,10 @@ async def entrypoint(ctx: JobContext):
                             f"CANDIDATE SUBMITTED CODE (Attempt {current_attempt}/{max_attempts}). "
                             f"Code Evaluation Report: {feedback}. "
                             f"All {max_attempts} attempts are exhausted. The code editor has been closed automatically. "
-                            f"Acknowledge their effort and move on to the next question."
+                            f"Acknowledge their effort and proceed to the oral viva questions."
                         )
                     )
-                session.say("That was your last attempt. Let's move on to the next part of the interview.", allow_interruptions=True)
+                session.say("That was your last attempt. Let's move on to the viva questions.", allow_interruptions=True)
 
             else:
                 # ⚠️ Incorrect but attempts remain — keep editor open
@@ -228,8 +230,9 @@ async def entrypoint(ctx: JobContext):
         except Exception as e:
             pass
 
+    base_instructions = get_interview_instructions(track=track, language_label=lang_profile["label"])
     custom_instructions = (
-        f"{INTERVIEW_INSTRUCTIONS}\n\n"
+        f"{base_instructions}\n\n"
         f"INTERVIEW ROLE: {role_title} (Track: {track.upper()})\n"
         f"JOB DESCRIPTION FOR THIS INTERVIEW:\n"
         f"-------------\n"
@@ -248,24 +251,12 @@ async def entrypoint(ctx: JobContext):
         ),
     )
 
-    initial_greeting = get_random_greeting()
+    initial_greeting = get_random_greeting(language_key)
     logger.info(f"Speaking initial greeting (Zero-LLM latency): {initial_greeting}")
     session.say(
         initial_greeting,
         allow_interruptions=True,
     )
-
-    # ── Fallback: auto-open the code editor if the LLM fails to call the tool ──
-    async def _auto_open_code_editor_fallback():
-        # Wait for the greeting + coding question to be spoken (~15 seconds)
-        await asyncio.sleep(15)
-        if not fnc._editor_opened:
-            logger.info("AUTO-OPENING code editor (LLM did not call the tool — fallback triggered)")
-            fnc._editor_opened = True
-            fnc._code_attempts = 0
-            await fnc._send_editor_command("enable_code_editor")
-
-    asyncio.create_task(_auto_open_code_editor_fallback())
 
 
 if __name__ == "__main__":

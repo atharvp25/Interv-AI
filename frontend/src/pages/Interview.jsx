@@ -18,6 +18,9 @@ export default function Interview() {
   const [token, setToken] = useState('')
   const [url, setUrl] = useState('')
   const [error, setError] = useState('')
+  const [sessionTrack, setSessionTrack] = useState('tech')
+  const [sessionLang, setSessionLang] = useState('hinglish')
+  const [keywordsCount, setKeywordsCount] = useState(0)
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { token: jwtToken, user } = useContext(AuthContext)
@@ -32,6 +35,9 @@ export default function Interview() {
         const language = searchParams.get('lang') || localStorage.getItem('intervai_lang') || 'hinglish'
         const track = searchParams.get('track') || localStorage.getItem('intervai_track') || 'tech'
         const sessionId = searchParams.get('session') || localStorage.getItem('intervai_session') || ''
+
+        setSessionTrack(track)
+        setSessionLang(language)
         
         const baseUrl = window.location.hostname === 'localhost' ? 'http://127.0.0.1:8000' : ''
         const query = new URLSearchParams({
@@ -52,6 +58,9 @@ export default function Interview() {
         
         setToken(data.token)
         setUrl(data.url)
+        if (data.track) setSessionTrack(data.track)
+        if (data.language) setSessionLang(data.language)
+        if (data.keywords_count) setKeywordsCount(data.keywords_count)
       } catch (err) {
         setError(err.message)
       }
@@ -110,10 +119,37 @@ export default function Interview() {
         {/* Interview Panel — full width by default, 50% when code editor opens */}
         <div className="interview-panel">
           <div className="interview-top-bar">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
               <ConnectionStatus />
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                 <Shield size={14} color="var(--success)" /> Encrypted
+              </div>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                padding: '0.2rem 0.6rem',
+                borderRadius: '12px',
+                background: sessionTrack === 'tech' ? 'rgba(37, 99, 235, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                color: sessionTrack === 'tech' ? 'var(--primary)' : 'var(--success)',
+              }}>
+                {sessionTrack === 'tech' ? '💻 Tech Viva' : '💼 BDA Role-Play'}
+              </div>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                fontSize: '0.75rem',
+                fontWeight: 500,
+                padding: '0.2rem 0.6rem',
+                borderRadius: '12px',
+                background: 'var(--bg-main)',
+                color: 'var(--text-muted)',
+                border: '1px solid var(--border)',
+              }}>
+                🌐 {sessionLang.toUpperCase()}
               </div>
             </div>
             {isCodeEditorOpen && (

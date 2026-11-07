@@ -12,17 +12,20 @@
 - [x] Import side-effects in `config.py` -> **Fixed:** Moved folder initialization to FastAPI `lifespan` hook.
 - [x] 3 separate terminal startup friction -> **Fixed:** Created unified `run.py` subprocess controller.
 - [x] Speech pipeline wired to Deepgram/Cartesia -> **Fixed:** Migrated to Gnani Prisma (STT) and Timbre (TTS) via `livekit-plugins-gnani`.
-- [ ] Migrate deprecated `google.generativeai` to `google-genai` / LiveKit native LLM.
-- [ ] Fix dual agent dispatch in `token_server` / LiveKit Cloud rules.
-- [ ] Add browser WebRTC AEC constraints in `Interview.jsx`.
+- [x] Fix dual agent dispatch in `token_server` / LiveKit Cloud rules -> **Fixed:** Implemented Named Agent Dispatch (`intervai-agent`) embedded in JWT `RoomConfiguration`.
+- [x] Add browser WebRTC AEC constraints in `Interview.jsx` -> **Fixed:** Added `{ echoCancellation: true, noiseSuppression: true, autoGainControl: true }`.
+- [x] Upgraded Gnani Prisma v3.0 WebSocket adapter (`server/agent/gnani_prisma.py`) with support for 10 Indian languages + Hinglish, `x-model: prisma-v3.0`, and `x-keywords` keyterm boosting.
+- [x] Multi-user file collision in JD parser -> **Fixed:** MongoDB `interview_sessions` collection with zero-token regex keyterm extractor.
+- [x] Remove 15-second hardcoded code editor timer -> **Fixed:** Deleted sleep timer hack; editor now triggers naturally via LLM function calling for coding questions only.
+- [x] Migrated deprecated `google.generativeai` package to modern `from google import genai`.
 
-## 3. Phase 2 Benchmarks & Verified Facts (07 Nov 2026)
+## 3. Phase 2 & 3 Benchmarks & Verified Facts (07–08 Nov 2026)
 - **Gnani Timbre TTS (REST):** Latency ~1109 ms | Model: `timbre-v2.5` | Voice: `Nalini` | Audio: 540 KB WAV.
 - **Gnani Prisma v3.0 STT (REST):** Latency: **589.7 ms** (Sub-600ms!) | Model: `prisma-v3.0` | Language: `indic-auto` with `["en-IN", "hi-IN"]`.
-- **Transcription Accuracy:** Accurately captured Hinglish loanwords in Devanagari script: *"नमस्ते, वेलकम टू योर इंटरव्यू। मैं आपका ए आई इंटरव्यूअर हूँ। कृपया अपना नाम बताइए।"*
-- **LiveKit Agent Worker:** Successfully loaded `livekit.plugins.gnani` (v1.8.11) and registered with LiveKit Cloud (India South region).
-- **Zero-LLM Turn 1:** Pre-defined warm greeting pool (`GREETINGS_POOL`) integrated to save LLM tokens and eliminate opening turn latency.
-
-## 4. Plan for Tomorrow (Phase 3 & 4)
-- **Phase 3:** Fix agent dispatch duplicate bug, add WebRTC AEC (`echoCancellation: true`), and test the live voice interview in the browser.
-- **Phase 4:** Multi-track interview engine (BDA/Sales Hinglish pitch role-play vs. Tech Coding Viva) and dynamic MongoDB session links.
+- **Keyterm Boosting:** Zero-cost regex keyword extractor pulls domain jargon (FastAPI, SQL, B2B, ROI, etc.) in <1ms and injects them into Prisma v3.0 WebSocket headers.
+- **Multi-Track Engine:**
+  - **Track 1 (`bda`):** Enterprise Sales & BFSI pitch role-play with skeptical buyer persona and objection handling (voice-only).
+  - **Track 2 (`tech`):** CS viva + split-screen live Python coding editor + oral viva defense to defeat AI copy-paste cheating.
+- **Frontend Upgrades:**
+  - Setup UI: Track card selector (`tech` vs `bda`), 11-language dropdown, 1-click presets, and shareable link generator with copy-to-clipboard.
+  - Interview UI: Real-time telemetry badges (Track, Language, Encrypted status).
