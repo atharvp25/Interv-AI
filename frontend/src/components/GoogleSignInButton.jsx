@@ -2,10 +2,11 @@ import React, { useEffect, useRef, useContext, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { AlertCircle } from 'lucide-react';
 
-export default function GoogleSignInButton({ onSuccessRedirect, text = 'continue_with' }) {
+export default function GoogleSignInButton({ onSuccessRedirect, text = 'signin_with' }) {
   const { googleClientId, loginWithGoogle } = useContext(AuthContext);
-  const buttonContainerRef = useRef(null);
+  const gsiContainerRef = useRef(null);
   const [error, setError] = useState('');
+  const [gsiLoaded, setGsiLoaded] = useState(false);
 
   useEffect(() => {
     if (!googleClientId) return;
@@ -13,7 +14,7 @@ export default function GoogleSignInButton({ onSuccessRedirect, text = 'continue
     let attempts = 0;
     const interval = setInterval(() => {
       attempts += 1;
-      if (window.google && window.google.accounts && window.google.accounts.id && buttonContainerRef.current) {
+      if (window.google?.accounts?.id && gsiContainerRef.current) {
         clearInterval(interval);
         try {
           window.google.accounts.id.initialize({
@@ -22,24 +23,23 @@ export default function GoogleSignInButton({ onSuccessRedirect, text = 'continue
               setError('');
               try {
                 const data = await loginWithGoogle(response.credential);
-                if (onSuccessRedirect) {
-                  onSuccessRedirect(data);
-                }
+                if (onSuccessRedirect) onSuccessRedirect(data);
               } catch (err) {
                 setError(err.message || 'Google Sign-In failed');
               }
             },
           });
 
-          window.google.accounts.id.renderButton(buttonContainerRef.current, {
+          window.google.accounts.id.renderButton(gsiContainerRef.current, {
             theme: 'outline',
             size: 'large',
-            width: 340,
+            width: 320,
             text,
-            shape: 'rectangular',
+            shape: 'pill',
           });
+          setGsiLoaded(true);
         } catch (err) {
-          console.error('Error initializing Google Sign-In button:', err);
+          console.error('Error initializing Google Sign-In:', err);
         }
       } else if (attempts > 30) {
         clearInterval(interval);
@@ -49,34 +49,99 @@ export default function GoogleSignInButton({ onSuccessRedirect, text = 'continue
     return () => clearInterval(interval);
   }, [googleClientId, onSuccessRedirect, text]);
 
+  const handleCustomClick = () => {
+    if (window.google?.accounts?.id) {
+      window.google.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          // If One Tap is suppressed, click the internal GSI button if present
+          const btn = gsiContainerRef.current?.querySelector('div[role=button]');
+          if (btn) btn.click();
+        }
+      });
+    } else {
+      setError('Google Sign-In library is loading. Please check your internet connection or try again.');
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
       {error && (
         <div style={{
           background: 'rgba(239, 68, 68, 0.1)',
           color: 'var(--error)',
-          padding: '0.75rem 1rem',
+          padding: '0.65rem 0.9rem',
           borderRadius: '8px',
-          marginBottom: '1rem',
+          marginBottom: '0.85rem',
           display: 'flex',
           alignItems: 'center',
-          gap: '0.5rem',
-          fontSize: '0.85rem',
+          gap: '0.4rem',
+          fontSize: '0.82rem',
           width: '100%',
         }}>
-          <AlertCircle size={16} /> {error}
+          <AlertCircle size={15} /> {error}
         </div>
       )}
+
+      {/* Official Google GSI Rendered Button Container */}
       <div
-        ref={buttonContainerRef}
+        ref={gsiContainerRef}
         style={{
           minHeight: '44px',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
+          width: '100%',
         }}
       />
+
+      {/* Fallback button if GSI container is still mounting */}
+      {!gsiLoaded && (
+        <button
+          type="button"
+          onClick={handleCustomClick}
+          className="btn-secondary"
+          style={{
+            width: '100%',
+            maxWidth: '320px',
+            padding: '0.65rem 1.25rem',
+            borderRadius: '24px',
+            fontWeight: 600,
+            fontSize: '0.9rem',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.65rem',
+            boxShadow: 'var(--shadow-sm)',
+            border: '1px solid var(--border)',
+          }}
+        >
+          <GoogleGIcon size={18} />
+          <span>Continue with Google</span>
+        </button>
+      )}
     </div>
   );
 }
 
+function GoogleGIcon({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+        fill="#4285F4"
+      />
+      <path
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+        fill="#34A853"
+      />
+      <path
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+        fill="#FBBC05"
+      />
+      <path
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+        fill="#EA4335"
+      />
+    </svg>
+  );
+}

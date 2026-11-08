@@ -92,21 +92,27 @@ main {
   margin-top: auto;
 }
 
-/* Buttons */
-button {
+/* Buttons & Links Styled as Buttons */
+button,
+.btn-primary,
+.btn-secondary {
   cursor: pointer;
   font-family: 'Inter', sans-serif;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-weight: 500;
   transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  text-decoration: none;
+  line-height: 1.4;
 }
 
-button:disabled {
+button:disabled,
+.btn-primary:disabled,
+.btn-secondary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -114,8 +120,9 @@ button:disabled {
 .btn-primary {
   background-color: var(--primary);
   color: white;
-  padding: 0.75rem 1.5rem;
+  padding: 0.65rem 1.25rem;
   box-shadow: var(--shadow-sm);
+  border: 1px solid transparent;
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -128,7 +135,7 @@ button:disabled {
   background-color: var(--bg-surface);
   color: var(--text-main);
   border: 1px solid var(--border);
-  padding: 0.75rem 1.5rem;
+  padding: 0.65rem 1.25rem;
 }
 
 .btn-secondary:hover:not(:disabled) {

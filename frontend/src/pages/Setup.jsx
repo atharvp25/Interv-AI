@@ -2,9 +2,11 @@ import React, { useState, useRef, useContext, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   UploadCloud, CheckCircle2, AlertTriangle, ArrowRight,
-  ServerCog, Briefcase, Code, Globe, Link2, Copy, Sparkles, UserCheck, Clock, ShieldCheck
+  ServerCog, Briefcase, Code, Globe, Link2, Copy, Sparkles,
+  UserCheck, ShieldCheck, BookOpen, GraduationCap, Users
 } from 'lucide-react'
 import { AuthContext } from '../context/AuthContext'
+import LinkExpiryPicker from '../components/LinkExpiryPicker'
 
 const SUPPORTED_LANGUAGES = [
   { id: 'hinglish', label: 'Hinglish (Hindi + English)' },
@@ -20,27 +22,219 @@ const SUPPORTED_LANGUAGES = [
   { id: 'en-IN', label: 'Indian English' },
 ]
 
+const ROLE_TRACK_CONFIGS = {
+  recruiter: [
+    {
+      id: 'tech',
+      title: 'Technical Software Engineer (SDE) Screening',
+      subtitle: 'Live Python Code Editor + Complexity Defense',
+      description: 'Assess algorithmic problem-solving, real-time Python implementation, and oral communication under pressure.',
+      icon: Code,
+      badge: 'Live Code Editor',
+      badgeColor: '#2563eb',
+      defaultRoleTitle: 'Technical Software Engineer (SDE) Screening',
+      presetTitle: 'Use 1-Click SDE Technical Screening Preset',
+      backendTrack: 'tech',
+      presetJd: `Role: Full Stack / Backend Software Engineer (SDE)
+Key Requirements:
+- Strong algorithmic problem solving in Python, Data Structures (Hash Maps, Trees, Graphs, Sorting).
+- Ability to explain time and space complexity (Big-O) aloud clearly.
+- RESTful API design, database querying, and debugging skills.
+- Clean code readability, edge case handling, and modular architecture.`,
+    },
+    {
+      id: 'bda',
+      title: 'BDA / Enterprise Sales & Pitch Screening',
+      subtitle: 'Consultative Pitch & Objection Handling Role-Play',
+      description: 'AI acts as a prospective client/CXO testing consultative selling, objection handling, pricing pushback, and deal closing.',
+      icon: Briefcase,
+      badge: 'Objection Role-Play',
+      badgeColor: '#10b981',
+      defaultRoleTitle: 'Enterprise BDA Sales & Pitch Screening',
+      presetTitle: 'Use 1-Click BDA Sales Screening Preset',
+      backendTrack: 'bda',
+      presetJd: `Role: Business Development Associate (BDA) / Enterprise Sales Representative
+Key Requirements:
+- Consultative selling, customer pain-point discovery, and value articulation.
+- High-stakes objection handling (budget freezes, competitor comparison, ROI skepticism).
+- Fluent multi-turn rapport building in Hinglish or regional Indian languages.
+- Clear closing methodology, contract pilot proposal, and follow-up urgency.`,
+    },
+    {
+      id: 'ops',
+      title: 'Operations & Customer Success Screening',
+      subtitle: 'Situational Judgment & Stakeholder Communication',
+      description: 'Evaluate customer empathy, conflict de-escalation, cross-functional coordination, and operational problem solving.',
+      icon: Users,
+      badge: 'Situational Judgment',
+      badgeColor: '#f59e0b',
+      defaultRoleTitle: 'Operations & Customer Success Screening',
+      presetTitle: 'Use 1-Click Operations & Support Screening Preset',
+      backendTrack: 'bda',
+      presetJd: `Role: Operations Specialist & Customer Success Manager
+Key Requirements:
+- High empathy and professional de-escalation during client escalations.
+- SLA adherence, root-cause incident analysis, and vendor coordination.
+- Clear verbal communication in English, Hinglish, or regional languages.
+- Process efficiency and analytical decision making under pressure.`,
+    },
+  ],
+  teacher: [
+    {
+      id: 'lab_viva',
+      title: 'CS Practical Coding & Lab Oral Viva',
+      subtitle: 'Live Python Code Editor + Lab Rubric Defense',
+      description: 'Students implement data structures in the live Python editor and orally defend their implementation, time complexity, and edge cases.',
+      icon: Code,
+      badge: 'Live Lab Editor',
+      badgeColor: '#2563eb',
+      defaultRoleTitle: 'CS Practical Coding & Lab Oral Viva',
+      presetTitle: 'Use 1-Click Python Lab Viva Preset',
+      backendTrack: 'tech',
+      presetJd: `Academic Course: CS301 Data Structures & Algorithms Practical Viva
+Lab Rubric:
+- Practical coding in Python: Lists, Stacks, Queues, Binary Trees, Hash Tables, Recursion.
+- Oral viva defense: Explain line-by-line code logic, time complexity O(n), and space complexity.
+- Edge case handling: Empty inputs, null pointers, and boundary conditions.
+- Adherence to academic integrity and anti-cheat voice defense.`,
+    },
+    {
+      id: 'theory_viva',
+      title: 'Core Engineering & DSA Theory Viva',
+      subtitle: 'Oral Examination on Algorithms, OOP & OS',
+      description: 'Rigorous academic oral examination evaluating theoretical mastery of algorithmic complexity, tree traversals, memory management, and OOP.',
+      icon: BookOpen,
+      badge: 'Oral Theory Viva',
+      badgeColor: '#8b5cf6',
+      defaultRoleTitle: 'Core CS & DSA Theory Oral Viva',
+      presetTitle: 'Use 1-Click DSA & Theory Viva Preset',
+      backendTrack: 'tech',
+      presetJd: `Academic Course: Core Computer Science & Algorithms Theory Viva
+Viva Syllabus:
+- Asymptotic notations: Big-O, Omega, Theta analysis.
+- Tree and graph traversals: BFS, DFS, Dijkstra, AVL trees.
+- Object-Oriented Programming (OOP): Inheritance, Polymorphism, Encapsulation, Abstraction.
+- Operating Systems & Database fundamentals: Deadlocks, Paging, ACID properties, Normalization.`,
+    },
+    {
+      id: 'capstone',
+      title: 'Capstone Project Oral Defense & Architecture',
+      subtitle: 'System Architecture & Implementation Defense',
+      description: 'Students defend their final year engineering capstone architecture, API schemas, design patterns, and database choices.',
+      icon: GraduationCap,
+      badge: 'Project Defense',
+      badgeColor: '#10b981',
+      defaultRoleTitle: 'Final Year Capstone Project Defense',
+      presetTitle: 'Use 1-Click Capstone Defense Preset',
+      backendTrack: 'tech',
+      presetJd: `Academic Assessment: Final Year Capstone Project Oral Defense
+Defense Criteria:
+- End-to-end system architecture and tech stack justification.
+- API design, database schemas, normalization, and scaling considerations.
+- Security practices, authentication flows, and automated testing.
+- Individual contribution breakdown and oral technical defense.`,
+    },
+  ],
+  student: [
+    {
+      id: 'student_lab',
+      title: 'CS Practical Lab Exam & Coding Viva Prep',
+      subtitle: 'Live Python Code Editor + Oral Defense',
+      description: 'Practice solving programming problems and defending your code aloud before your professor conducts the viva.',
+      icon: Code,
+      badge: 'Lab Exam Prep',
+      badgeColor: '#2563eb',
+      defaultRoleTitle: 'Python Data Structures Lab Viva Practice',
+      presetTitle: 'Use 1-Click Lab Viva Practice Preset',
+      backendTrack: 'tech',
+      presetJd: `Practice Topic: Data Structures & Python Viva Practice
+Focus Areas:
+- Writing clean Python functions for arrays, linked lists, trees, and hashing.
+- Speaking fluently about time/space complexity in English or Hinglish.
+- Answering follow-up questions from the AI professor on edge cases.`,
+    },
+    {
+      id: 'student_theory',
+      title: 'Computer Science Theory & DSA Viva Prep',
+      subtitle: 'Oral Defense on Algorithms, OOP & System Fundamentals',
+      description: 'Sharpen your theoretical concepts with interactive AI questioning in your preferred Indian language.',
+      icon: BookOpen,
+      badge: 'Oral Theory Prep',
+      badgeColor: '#8b5cf6',
+      defaultRoleTitle: 'CS Theory & DSA Viva Prep',
+      presetTitle: 'Use 1-Click CS Theory Practice Preset',
+      backendTrack: 'tech',
+      presetJd: `Practice Topic: CS Theory, Algorithms & OOP Viva Prep
+Focus Areas:
+- Explaining sorting algorithms, search complexity, and recursion trees aloud.
+- Real-world examples of OOP principles (Polymorphism, Abstraction).
+- Database transactions, indexing, and OS scheduling concepts.`,
+    },
+  ],
+  candidate: [
+    {
+      id: 'cand_tech',
+      title: 'Software Engineer (SDE) Technical Prep',
+      subtitle: 'Live Python Editor + System Defense',
+      description: 'Solve coding challenges in real-time and practice explaining algorithmic complexity to an AI interviewer.',
+      icon: Code,
+      badge: 'SDE Interview Prep',
+      badgeColor: '#2563eb',
+      defaultRoleTitle: 'Software Engineer (SDE) Practice Interview',
+      presetTitle: 'Use 1-Click SDE Technical Practice Preset',
+      backendTrack: 'tech',
+      presetJd: `Target Role: Software Development Engineer (SDE)
+Practice Goals:
+- Write optimal Python code under time constraints.
+- Defend space and time complexity trade-offs aloud.
+- Walk through edge cases, test inputs, and system scalability.`,
+    },
+    {
+      id: 'cand_bda',
+      title: 'BDA / Sales Pitch & Objection Handling Prep',
+      subtitle: 'Voice Pitching & Negotiation Role-Play',
+      description: 'Practice high-conviction product pitches and price objection handling in 10+ Indian languages against an AI buyer.',
+      icon: Briefcase,
+      badge: 'Sales Pitch Prep',
+      badgeColor: '#10b981',
+      defaultRoleTitle: 'BDA Sales Pitch & Objection Handling Prep',
+      presetTitle: 'Use 1-Click BDA Sales Pitch Practice Preset',
+      backendTrack: 'bda',
+      presetJd: `Target Role: Business Development Associate (BDA)
+Practice Goals:
+- Master cold pitch opening and value proposition in Hinglish or regional languages.
+- Handle tough price and timing objections persuasively without sounding defensive.
+- Secure customer commitment and close next steps.`,
+    },
+  ],
+}
+
 export default function Setup() {
   const navigate = useNavigate()
   const fileInputRef = useRef(null)
   const { token, effectiveRole, isAssessor, guestMode, triggerAuthRequired } = useContext(AuthContext)
 
-  // Assessors default to creating assigned links; Takers only have Self-Practice
-  const [mode, setMode] = useState(isAssessor ? 'recruiter' : 'practice')
-  const [track, setTrack] = useState(effectiveRole === 'recruiter' ? 'bda' : 'tech')
+  // Current Role's available track cards (Recruiter sees ONLY recruiter tracks, Teacher sees ONLY teacher tracks)
+  const currentRoleTracks =
+    ROLE_TRACK_CONFIGS[effectiveRole] ||
+    (isAssessor ? ROLE_TRACK_CONFIGS.recruiter : ROLE_TRACK_CONFIGS.candidate)
+
+  // Mode: Assessors can toggle between creating an assigned link or trying self-practice
+  const [mode, setMode] = useState(isAssessor ? 'assign' : 'practice')
+  const [selectedTrackId, setSelectedTrackId] = useState(currentRoleTracks[0]?.id || 'tech')
   const [language, setLanguage] = useState('hinglish')
   const [status, setStatus] = useState('idle') // idle, uploading, ready, error
   const [errorMessage, setErrorMessage] = useState('')
 
-  // Assessment / Session fields
-  const [roleTitle, setRoleTitle] = useState('')
+  // Assessment / Session configuration fields
+  const [roleTitle, setRoleTitle] = useState(currentRoleTracks[0]?.defaultRoleTitle || '')
   const [jdText, setJdText] = useState('')
   const [jdFileId, setJdFileId] = useState(null)
-  const [expiresHours, setExpiresHours] = useState(168) // 7 days
+  const [expiresHours, setExpiresHours] = useState(168) // 7 days default
   const [maxAttempts, setMaxAttempts] = useState(1)
   const [shareWithTaker, setShareWithTaker] = useState(effectiveRole === 'teacher')
 
-  // Output state
+  // Output generated token & secrets
   const [sessionId, setSessionId] = useState('')
   const [sessionSecret, setSessionSecret] = useState('')
   const [shareToken, setShareToken] = useState('')
@@ -48,39 +242,49 @@ export default function Setup() {
   const [copied, setCopied] = useState(false)
   const [assignedLinkInput, setAssignedLinkInput] = useState('')
 
+  // Sync state whenever role changes
   useEffect(() => {
-    setMode(isAssessor ? 'recruiter' : 'practice')
+    setMode(isAssessor ? 'assign' : 'practice')
     setShareWithTaker(effectiveRole === 'teacher')
-    if (effectiveRole === 'recruiter') {
-      setTrack('bda')
-      setRoleTitle('Enterprise BDA Sales & BFSI Screening')
-    } else if (effectiveRole === 'teacher') {
-      setTrack('tech')
-      setRoleTitle('CS Practical Coding & Oral Viva Exam')
-    } else {
-      setRoleTitle('Python & AI Engineer Practice Viva')
+    const tracks =
+      ROLE_TRACK_CONFIGS[effectiveRole] ||
+      (isAssessor ? ROLE_TRACK_CONFIGS.recruiter : ROLE_TRACK_CONFIGS.candidate)
+    if (tracks.length > 0) {
+      setSelectedTrackId(tracks[0].id)
+      setRoleTitle(tracks[0].defaultRoleTitle)
     }
+    setStatus('idle')
   }, [effectiveRole, isAssessor])
+
+  const activeTrackConfig =
+    currentRoleTracks.find((t) => t.id === selectedTrackId) || currentRoleTracks[0]
 
   const getBaseUrl = () => (window.location.hostname === 'localhost' ? 'http://127.0.0.1:8000' : '')
 
+  const handleSelectTrack = (trackItem) => {
+    setSelectedTrackId(trackItem.id)
+    setRoleTitle(trackItem.defaultRoleTitle)
+    setJdText('')
+    setJdFileId(null)
+    if (status === 'ready') setStatus('idle')
+  }
+
   // Initialize either an Assigned Assessment (for Recruiter/Teacher) or a Practice Session
-  const initializeContext = async (selectedTrack, customJdText = jdText, customJdId = jdFileId, customTitle = roleTitle) => {
+  const initializeContext = async (customJdText = null, customJdId = null, customTitle = null) => {
     if (guestMode || !token) {
-      triggerAuthRequired('Sign in with Google is required to create live assessment links or start a practice voice session. Guest Mode is for UI preview only.')
+      triggerAuthRequired('Sign in with Google is required to generate live assessment links or launch live voice interviews. Guest Mode is for UI exploration only.')
       return
     }
 
     setStatus('uploading')
     setErrorMessage('')
-    const defaultTitle = selectedTrack === 'tech'
-      ? (effectiveRole === 'teacher' ? 'CS Practical Coding & Oral Viva' : 'Python & AI Engineer Viva')
-      : 'Enterprise BDA Sales & BFSI Screening'
-    const finalTitle = (customTitle || defaultTitle).trim()
-    setRoleTitle(finalTitle)
+
+    const finalTitle = (customTitle || roleTitle || activeTrackConfig.defaultRoleTitle).trim()
+    const finalJd = customJdText !== null ? customJdText : (jdText || activeTrackConfig.presetJd)
+    const backendTrack = activeTrackConfig.backendTrack
 
     try {
-      if (mode === 'recruiter' && isAssessor) {
+      if (mode === 'assign' && isAssessor) {
         const res = await fetch(`${getBaseUrl()}/api/assessments`, {
           method: 'POST',
           headers: {
@@ -89,10 +293,10 @@ export default function Setup() {
           },
           body: JSON.stringify({
             role_title: finalTitle,
-            track: selectedTrack,
+            track: backendTrack,
             language,
-            jd_text: customJdText,
-            jd_file_id: customJdId,
+            jd_text: finalJd,
+            jd_file_id: customJdId || jdFileId,
             expires_in_hours: Number(expiresHours),
             max_attempts: Number(maxAttempts),
             share_with_taker: shareWithTaker,
@@ -112,9 +316,9 @@ export default function Setup() {
           },
           body: JSON.stringify({
             role_title: finalTitle,
-            track: selectedTrack,
+            track: backendTrack,
             language,
-            jd_text: customJdText,
+            jd_text: finalJd,
           }),
         })
         const data = await res.json()
@@ -130,13 +334,13 @@ export default function Setup() {
     }
   }
 
-  // Custom JD File Upload
+  // Custom File Upload
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
 
     if (guestMode || !token) {
-      triggerAuthRequired('Sign in with Google is required to upload custom Job Descriptions or Viva Rubrics.')
+      triggerAuthRequired('Sign in with Google is required to upload custom documents.')
       return
     }
 
@@ -147,7 +351,8 @@ export default function Setup() {
       const formData = new FormData()
       formData.append('file', file)
 
-      const res = await fetch(`${getBaseUrl()}/api/upload-jd?track=${track}&language=${language}`, {
+      const backendTrack = activeTrackConfig.backendTrack
+      const res = await fetch(`${getBaseUrl()}/api/upload-jd?track=${backendTrack}&language=${language}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -161,8 +366,8 @@ export default function Setup() {
       setJdFileId(data.jd_id)
       const uploadedTitle = roleTitle || data.role_title || file.name
 
-      if (mode === 'recruiter' && isAssessor) {
-        await initializeContext(track, data.jd_text || '', data.jd_id, uploadedTitle)
+      if (mode === 'assign' && isAssessor) {
+        await initializeContext(data.jd_text || '', data.jd_id, uploadedTitle)
       } else {
         setSessionId(data.session_id)
         setSessionSecret(data.session_secret || '')
@@ -181,11 +386,12 @@ export default function Setup() {
       triggerAuthRequired('Sign in with Google is required to launch a live practice interview.')
       return
     }
+    const backendTrack = activeTrackConfig.backendTrack
     localStorage.setItem('intervai_session', sessionId)
     localStorage.setItem('intervai_session_secret', sessionSecret)
-    localStorage.setItem('intervai_track', track)
+    localStorage.setItem('intervai_track', backendTrack)
     localStorage.setItem('intervai_lang', language)
-    navigate(`/interview?session=${sessionId}&secret=${encodeURIComponent(sessionSecret)}&track=${track}&lang=${language}`)
+    navigate(`/interview?session=${sessionId}&secret=${encodeURIComponent(sessionSecret)}&track=${backendTrack}&lang=${language}`)
   }
 
   const shareableUrl = `${window.location.origin}/assess/${shareToken}`
@@ -197,31 +403,33 @@ export default function Setup() {
   }
 
   return (
-    <div style={{ maxWidth: '880px', margin: '2.5rem auto', padding: '0 1.5rem' }}>
+    <div style={{ maxWidth: '920px', margin: '2.5rem auto', padding: '0 1.5rem', width: '100%' }}>
       {/* Top Header */}
       <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-        <h1 className="brand-font" style={{ fontSize: '2.1rem', marginBottom: '0.4rem', fontWeight: 700 }}>
+        <h1 className="brand-font" style={{ fontSize: '2.15rem', marginBottom: '0.4rem', fontWeight: 700 }}>
           {isAssessor
             ? effectiveRole === 'teacher'
-              ? 'Create College Viva Exam or Practice'
-              : 'Create Candidate Screening or Practice'
-            : 'Self-Practice Voice Assessment'}
+              ? 'Configure Academic Viva Assessment'
+              : 'Configure Candidate Screening Assessment'
+            : 'Configure Self-Practice Voice Assessment'}
         </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.94rem' }}>
           {isAssessor
-            ? 'Configure your track, Indian language, and tokenized link settings with automatic Gnani Prisma keyterm boosting.'
-            : 'Practice explaining your code aloud or handling sales objections in 10+ Indian languages.'}
+            ? effectiveRole === 'teacher'
+              ? 'Select exam track, viva language, customizable link expiry, and auto-boost academic rubric keyterms.'
+              : 'Select hiring track, interview language, customizable link expiry, and auto-boost technical keyterms.'
+            : 'Select your practice track and train against AI voice prompts in 10+ Indian languages.'}
         </p>
       </div>
 
-      {/* For Students/Candidates: Quick Box to Open an Assigned Link from Teacher/Recruiter */}
+      {/* For Students/Candidates: Quick Jump Bar for Teacher/Recruiter Links */}
       {!isAssessor && (
         <div
           className="panel animate-in"
           style={{
             padding: '1.25rem 1.5rem',
-            marginBottom: '1.5rem',
-            borderRadius: '14px',
+            marginBottom: '1.75rem',
+            borderRadius: '12px',
             background: 'rgba(37, 99, 235, 0.04)',
             border: '1px solid rgba(37, 99, 235, 0.2)',
             display: 'flex',
@@ -232,11 +440,11 @@ export default function Setup() {
           }}
         >
           <div>
-            <strong style={{ fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <Link2 size={16} color="var(--primary)" /> Have an Assigned Assessment Link from your Teacher or Recruiter?
+            <strong style={{ fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Link2 size={16} color="var(--primary)" /> Have an Assigned Assessment Link from your {effectiveRole === 'student' ? 'Teacher' : 'Recruiter'}?
             </strong>
-            <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-              Paste the link or token below to enter your assigned exam room.
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              Paste your assessment link below to immediately enter your exam room.
             </span>
           </div>
           <form
@@ -256,8 +464,8 @@ export default function Setup() {
               placeholder="Paste /assess/... link or token"
               style={{ flex: 1, padding: '0.55rem 0.8rem', fontSize: '0.85rem' }}
             />
-            <button type="submit" className="btn-primary" style={{ padding: '0.55rem 1rem', fontSize: '0.85rem' }}>
-              Open Link
+            <button type="submit" className="btn-primary" style={{ padding: '0.55rem 1rem', fontSize: '0.85rem', borderRadius: '10px' }}>
+              Enter Room
             </button>
           </form>
         </div>
@@ -265,19 +473,19 @@ export default function Setup() {
 
       {/* Main Configuration Card */}
       <div className="panel animate-in" style={{ padding: '2rem', borderRadius: '16px' }}>
-        {/* Mode Switcher — Only Assessors (Recruiter / Teacher) see the Assigned Link tab */}
+        {/* Mode Switcher for Assessors (Assign Link vs Self-Practice Test) */}
         {isAssessor && (
           <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '2rem', background: 'var(--bg-main)', padding: '0.4rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
             <button
               type="button"
-              onClick={() => { setMode('recruiter'); setStatus('idle'); }}
+              onClick={() => { setMode('assign'); setStatus('idle'); }}
               style={{
                 flex: 1,
                 padding: '0.75rem 1rem',
                 borderRadius: '8px',
                 border: 'none',
-                background: mode === 'recruiter' ? 'var(--primary)' : 'transparent',
-                color: mode === 'recruiter' ? '#fff' : 'var(--text-muted)',
+                background: mode === 'assign' ? 'var(--primary)' : 'transparent',
+                color: mode === 'assign' ? '#fff' : 'var(--text-muted)',
                 fontWeight: 600,
                 fontSize: '0.9rem',
                 cursor: 'pointer',
@@ -285,9 +493,10 @@ export default function Setup() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '0.5rem',
+                transition: 'all 0.15s ease',
               }}
             >
-              <Link2 size={18} />
+              <Link2 size={17} />
               {effectiveRole === 'teacher' ? 'Assign Viva Link to Students' : 'Assign Screening Link to Candidates'}
             </button>
             <button
@@ -307,90 +516,83 @@ export default function Setup() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '0.5rem',
+                transition: 'all 0.15s ease',
               }}
             >
-              <UserCheck size={18} /> Try Self-Practice Mode
+              <UserCheck size={17} /> Try Self-Practice Mode
             </button>
           </div>
         )}
 
-        {/* Assessment / Session Title */}
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.92rem' }}>
-            1. Assessment / Session Title
+        {/* 1. Track Selector Cards — STRICT ROLE SEPARATION */}
+        <div style={{ marginBottom: '1.75rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+            <label style={{ fontWeight: 600, fontSize: '0.95rem' }}>
+              1. Select {effectiveRole === 'teacher' ? 'Viva Exam Track' : effectiveRole === 'recruiter' ? 'Hiring Track' : 'Practice Track'}
+            </label>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+              Tailored for <strong>{effectiveRole?.toUpperCase()}</strong>
+            </span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
+            {currentRoleTracks.map((item) => {
+              const isSelected = selectedTrackId === item.id
+              const IconComp = item.icon
+              return (
+                <div
+                  key={item.id}
+                  onClick={() => handleSelectTrack(item)}
+                  style={{
+                    padding: '1.2rem',
+                    borderRadius: '12px',
+                    border: `2px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}`,
+                    background: isSelected ? 'rgba(37, 99, 235, 0.05)' : 'var(--bg-surface)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
+                      <div style={{ padding: '0.5rem', borderRadius: '8px', background: `${item.badgeColor}18`, color: item.badgeColor }}>
+                        <IconComp size={20} />
+                      </div>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 600, padding: '0.2rem 0.55rem', borderRadius: '10px', background: `${item.badgeColor}15`, color: item.badgeColor, border: `1px solid ${item.badgeColor}30` }}>
+                        {item.badge}
+                      </span>
+                    </div>
+                    <h3 style={{ fontSize: '0.98rem', fontWeight: 600, margin: '0 0 0.25rem 0' }}>{item.title}</h3>
+                    <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.5rem' }}>
+                      {item.subtitle}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.45, margin: 0 }}>
+                    {item.description}
+                  </p>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* 2. Assessment / Session Title */}
+        <div style={{ marginBottom: '1.75rem' }}>
+          <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.45rem', fontSize: '0.92rem' }}>
+            2. {effectiveRole === 'teacher' ? 'Viva Exam / Assignment Title' : effectiveRole === 'recruiter' ? 'Screening Role Title' : 'Practice Title'}
           </label>
           <input
             type="text"
             value={roleTitle}
             onChange={(e) => { setRoleTitle(e.target.value); if (status === 'ready') setStatus('idle'); }}
-            placeholder={
-              effectiveRole === 'teacher'
-                ? 'e.g. CS302 Data Structures & Python Viva — Batch B'
-                : 'e.g. Enterprise BDA Sales Pitch Screening (Hinglish)'
-            }
+            placeholder={activeTrackConfig.defaultRoleTitle}
           />
         </div>
 
-        {/* Track Selector Cards */}
-        <div style={{ marginBottom: '1.75rem' }}>
-          <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.75rem', fontSize: '0.92rem' }}>
-            2. Select Assessment Track
-          </label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
-            {/* Tech Track Card */}
-            <div
-              onClick={() => { setTrack('tech'); if (status === 'ready') setStatus('idle'); }}
-              style={{
-                padding: '1.2rem',
-                borderRadius: '12px',
-                border: `2px solid ${track === 'tech' ? 'var(--primary)' : 'var(--border)'}`,
-                background: track === 'tech' ? 'rgba(37, 99, 235, 0.05)' : 'var(--bg-surface)',
-                cursor: 'pointer',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                <div style={{ padding: '0.5rem', borderRadius: '8px', background: 'rgba(37, 99, 235, 0.1)', color: 'var(--primary)' }}>
-                  <Code size={22} />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '0.98rem', fontWeight: 600, margin: 0 }}>Practical Coding & Oral Viva</h3>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Live Python Editor + Oral Defense</span>
-                </div>
-              </div>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.45, margin: 0 }}>
-                Ideal for college lab vivas & SDE screening. Candidate writes Python code and defends time complexity aloud.
-              </p>
-            </div>
-
-            {/* BDA Track Card */}
-            <div
-              onClick={() => { setTrack('bda'); if (status === 'ready') setStatus('idle'); }}
-              style={{
-                padding: '1.2rem',
-                borderRadius: '12px',
-                border: `2px solid ${track === 'bda' ? 'var(--primary)' : 'var(--border)'}`,
-                background: track === 'bda' ? 'rgba(37, 99, 235, 0.05)' : 'var(--bg-surface)',
-                cursor: 'pointer',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                <div style={{ padding: '0.5rem', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)' }}>
-                  <Briefcase size={22} />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '0.98rem', fontWeight: 600, margin: 0 }}>BDA / Sales & BFSI Role-Play</h3>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Voice Pitch & Objection Handling</span>
-                </div>
-              </div>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.45, margin: 0 }}>
-                AI acts as a skeptical buyer testing consultative pitching, price objection handling, and deal closing.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Language Selection + Assessor Link Controls */}
-        <div style={{ display: 'grid', gridTemplateColumns: isAssessor && mode === 'recruiter' ? '1fr 1fr 1fr' : '1fr', gap: '1rem', marginBottom: '1.75rem' }}>
+        {/* 3. Interview Language & Strict Exam Controls */}
+        <div style={{ display: 'grid', gridTemplateColumns: isAssessor && mode === 'assign' ? '1fr 1fr' : '1fr', gap: '1rem', marginBottom: '1.75rem' }}>
           <div>
             <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.45rem', fontSize: '0.88rem' }}>
               <Globe size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
@@ -407,45 +609,40 @@ export default function Setup() {
             </select>
           </div>
 
-          {isAssessor && mode === 'recruiter' && (
-            <>
-              <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.45rem', fontSize: '0.88rem' }}>
-                  <Clock size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
-                  Link Expiry Window
-                </label>
-                <select
-                  value={expiresHours}
-                  onChange={(e) => { setExpiresHours(e.target.value); if (status === 'ready') setStatus('idle'); }}
-                  style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-surface)' }}
-                >
-                  <option value={24}>24 Hours</option>
-                  <option value={72}>3 Days</option>
-                  <option value={168}>7 Days (Default)</option>
-                  <option value={336}>14 Days</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.45rem', fontSize: '0.88rem' }}>
-                  <ShieldCheck size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
-                  Max Attempts (One-Claimer)
-                </label>
-                <select
-                  value={maxAttempts}
-                  onChange={(e) => { setMaxAttempts(e.target.value); if (status === 'ready') setStatus('idle'); }}
-                  style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-surface)' }}
-                >
-                  <option value={1}>1 Attempt (Strict Exam)</option>
-                  <option value={2}>2 Attempts</option>
-                  <option value={3}>3 Attempts</option>
-                </select>
-              </div>
-            </>
+          {isAssessor && mode === 'assign' && (
+            <div>
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.45rem', fontSize: '0.88rem' }}>
+                <ShieldCheck size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+                Max Allowed Attempts (Anti-Cheat)
+              </label>
+              <select
+                value={maxAttempts}
+                onChange={(e) => { setMaxAttempts(e.target.value); if (status === 'ready') setStatus('idle'); }}
+                style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-surface)' }}
+              >
+                <option value={1}>1 Attempt (Strict Single-Use Exam)</option>
+                <option value={2}>2 Attempts (Retake Allowed)</option>
+                <option value={3}>3 Attempts</option>
+              </select>
+            </div>
           )}
         </div>
 
-        {/* Report Sharing Policy Toggle (For Assessors creating Assigned Links) */}
-        {isAssessor && mode === 'recruiter' && (
+        {/* 4. Link Expiry Window — FULLY CUSTOMIZABLE (Zero Hardcoded Lock) */}
+        {isAssessor && mode === 'assign' && (
+          <div style={{ marginBottom: '1.75rem' }}>
+            <LinkExpiryPicker
+              totalHours={expiresHours}
+              onChangeHours={(h) => {
+                setExpiresHours(h)
+                if (status === 'ready') setStatus('idle')
+              }}
+            />
+          </div>
+        )}
+
+        {/* 5. Report Sharing Policy (Assessors Only) */}
+        {isAssessor && mode === 'assign' && (
           <div
             style={{
               padding: '0.9rem 1.1rem',
@@ -461,12 +658,12 @@ export default function Setup() {
           >
             <div>
               <strong style={{ fontSize: '0.88rem', display: 'block' }}>
-                Share Evaluation Report with {effectiveRole === 'teacher' ? 'Student' : 'Candidate'}?
+                Release Evaluation Scorecard to {effectiveRole === 'teacher' ? 'Student' : 'Candidate'}?
               </strong>
               <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                 {effectiveRole === 'teacher'
-                  ? 'Default ON for Teachers so students learn from feedback. You always see all reports.'
-                  : 'Default OFF for Recruiters (standard hiring practice). You can toggle this anytime on your dashboard.'}
+                  ? 'Default ON for Professors so students view pedagogical feedback & AI grading breakdown.'
+                  : 'Default OFF for Recruiters (standard corporate hiring practice). You can toggle this on your dashboard anytime.'}
               </span>
             </div>
             <input
@@ -478,24 +675,26 @@ export default function Setup() {
           </div>
         )}
 
-        {/* Context Initialization: 1-Click Preset OR Custom File Upload */}
+        {/* 6. Context & Gnani Prisma Keyterm Ingestion */}
         <div style={{ marginBottom: '1.75rem' }}>
           <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.75rem', fontSize: '0.92rem' }}>
-            3. Initialize JD / Viva Rubric & Gnani Prisma Keyterm Boosting
+            {isAssessor && mode === 'assign' ? '6.' : '3.'} {effectiveRole === 'teacher' ? 'Viva Rubric / Syllabus Keyterm Ingestion' : effectiveRole === 'recruiter' ? 'Job Description / Rubric Keyterm Ingestion' : 'Practice Topic & Keyterm Ingestion'}
           </label>
 
+          {/* 1-Click Preset Button */}
           <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
             <button
               type="button"
               className="btn-secondary"
-              onClick={() => initializeContext(track)}
-              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.8rem' }}
+              onClick={() => initializeContext()}
+              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.8rem', borderRadius: '10px' }}
             >
               <Sparkles size={16} color="var(--primary)" />
-              Use 1-Click {track === 'tech' ? 'Python Viva & Coding' : 'BDA Sales Role-Play'} Preset
+              {activeTrackConfig.presetTitle}
             </button>
           </div>
 
+          {/* Dropzone for Custom PDF / TXT Document */}
           <div
             className={`dropzone ${status === 'uploading' ? 'uploading' : ''}`}
             onClick={() => fileInputRef.current?.click()}
@@ -513,10 +712,14 @@ export default function Setup() {
               <>
                 <UploadCloud size={34} color="var(--primary)" style={{ marginBottom: '0.4rem' }} />
                 <h4 style={{ margin: '0 0 0.2rem 0', fontWeight: 600 }}>
-                  Or upload custom {effectiveRole === 'teacher' ? 'Viva Rubric / Lab Sheet' : 'Job Description'} (PDF/TXT)
+                  {effectiveRole === 'teacher'
+                    ? 'Or upload custom Viva Rubric / Lab Question Sheet (PDF/TXT)'
+                    : effectiveRole === 'recruiter'
+                    ? 'Or upload custom Job Description / Hiring Matrix (PDF/TXT)'
+                    : 'Or upload your target syllabus / JD document (PDF/TXT)'}
                 </h4>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: 0 }}>
-                  Automatically extracts domain terms in &lt;1ms to boost Gnani Prisma v3.0 STT accuracy
+                  Extracts technical keyterms in &lt;1ms to boost Gnani Prisma v3.0 STT phonetic accuracy
                 </p>
               </>
             )}
@@ -532,10 +735,10 @@ export default function Setup() {
               <>
                 <CheckCircle2 size={34} color="var(--success)" style={{ marginBottom: '0.4rem' }} />
                 <h4 style={{ margin: '0 0 0.2rem 0', fontWeight: 600, color: 'var(--success)' }}>
-                  {roleTitle} Ready!
+                  {roleTitle} Initialized!
                 </h4>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', margin: 0 }}>
-                  ✅ {keywordsCount} Domain Keyterms injected into Gnani Prisma v3.0 WebSocket headers
+                  ✅ Injected {keywordsCount} domain keyterms into Gnani Prisma v3.0 WebSocket headers
                 </p>
               </>
             )}
@@ -550,18 +753,18 @@ export default function Setup() {
           </div>
         </div>
 
-        {/* Action Area */}
+        {/* Action Area: Launch Practice vs Generated Link */}
         {status === 'ready' && mode === 'practice' && (
           <button
             className="btn-primary"
             onClick={handleStartPractice}
-            style={{ width: '100%', padding: '0.9rem', fontSize: '1rem', justifyContent: 'center' }}
+            style={{ width: '100%', padding: '0.9rem', fontSize: '1rem', justifyContent: 'center', borderRadius: '10px' }}
           >
             Launch Live Self-Practice Interview <ArrowRight size={18} />
           </button>
         )}
 
-        {status === 'ready' && mode === 'recruiter' && isAssessor && (
+        {status === 'ready' && mode === 'assign' && isAssessor && (
           <div style={{ background: 'var(--bg-main)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
             <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
               ONE-CLAIMER TOKENIZED LINK (SEND TO {effectiveRole === 'teacher' ? 'STUDENT' : 'CANDIDATE'}):
@@ -576,13 +779,13 @@ export default function Setup() {
               <button
                 className="btn-primary"
                 onClick={handleCopyLink}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap', padding: '0.6rem 1.1rem' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap', padding: '0.6rem 1.1rem', borderRadius: '8px' }}
               >
                 <Copy size={16} /> {copied ? 'Copied!' : 'Copy Link'}
               </button>
             </div>
             <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.55rem', marginBottom: 0 }}>
-              🔒 Protected by SHA-256 token hash. Once claimed by a {effectiveRole === 'teacher' ? 'student' : 'candidate'}, no other person can reuse it. Completed reports appear automatically on your Dashboard.
+              🔒 Protected by SHA-256 token hash. Expires in {expiresHours} hours ({expiresHours >= 24 && expiresHours % 24 === 0 ? `${expiresHours / 24} day(s)` : `${expiresHours} hr(s)`}). Once claimed, no other user can access it.
             </p>
           </div>
         )}
@@ -591,7 +794,7 @@ export default function Setup() {
           <button
             className="btn-primary"
             disabled
-            style={{ width: '100%', opacity: 0.5, cursor: 'not-allowed', padding: '0.9rem', justifyContent: 'center' }}
+            style={{ width: '100%', opacity: 0.5, cursor: 'not-allowed', padding: '0.9rem', justifyContent: 'center', borderRadius: '10px' }}
           >
             Click Preset or Upload Document Above to Initialize
           </button>

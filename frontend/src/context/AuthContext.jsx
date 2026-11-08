@@ -103,6 +103,42 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
+  const loginWithPassword = async (username, password) => {
+    const res = await fetch(`${getBaseUrl()}/api/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Login failed');
+
+    setAuthPromptModal({ open: false, reason: '' });
+    setUser(data.user);
+    setToken(data.access_token);
+    if (data.needs_onboarding || !data.user?.role) {
+      setShowRoleModal(true);
+    }
+    return data;
+  };
+
+  const registerWithPassword = async ({ username, email, password, role, full_name, organization }) => {
+    const res = await fetch(`${getBaseUrl()}/api/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password, role, full_name, organization })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Registration failed');
+
+    setAuthPromptModal({ open: false, reason: '' });
+    setUser(data.user);
+    setToken(data.access_token);
+    if (data.user?.needs_onboarding || !data.user?.role) {
+      setShowRoleModal(true);
+    }
+    return data;
+  };
+
   const completeOnboarding = async ({ role, full_name, organization }) => {
     if (token) {
       const res = await fetch(`${getBaseUrl()}/api/onboarding`, {
@@ -172,6 +208,8 @@ export const AuthProvider = ({ children }) => {
         loading,
         googleClientId,
         loginWithGoogle,
+        loginWithPassword,
+        registerWithPassword,
         completeOnboarding,
         guestMode,
         guestRole,

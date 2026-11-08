@@ -1,6 +1,23 @@
-Position: Software Engineer / Data Scientist
-Required Skills: Python, SQL, Machine Learning, Data Structures & Algorithms, REST APIs, System Design.
-Responsibilities:
-- Build and maintain scalable backend services and data pipelines.
-- Develop and deploy machine learning models in production.
-- Collaborate with cross-functional teams to deliver high quality solutions.
+Software Engineer (Fresher)
+Experience: 0–1 Years
+Job Type: Full-Time
+
+Job Overview
+We are looking for a motivated and enthusiastic Fresher Software Engineer to join our development team. The candidate should have a basic understanding of programming concepts and a passion for learning new technologies.
+
+Key Responsibilities
+Develop, test, and maintain software applications.
+Write clean, efficient, and maintainable code.
+Debug and troubleshoot basic technical issues.
+Collaborate with team members on development tasks.
+Learn and adapt to new technologies and tools.
+Required Skills
+Basic knowledge of Java, Python, C++, or JavaScript.
+Understanding of OOPs, DBMS, and data structures.
+Familiarity with HTML, CSS, and SQL is a plus.
+Good problem-solving and communication skills.
+Willingness to learn and work in a team.
+Education
+B.E./B.Tech/B.Sc./BCA/MCA in Computer Science, IT, or a related field.
+
+Freshers are welcome to apply!
