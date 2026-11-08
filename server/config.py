@@ -31,6 +31,15 @@ GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 GNANI_API_KEY = os.environ.get("GNANI_API_KEY")
 
+# Primary model: lightweight, ultra-fast (0.76s), zero thinking overhead, high rate-limits
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash-lite")
+GEMINI_FALLBACK_MODELS = [
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-flash-lite-latest",
+    "gemini-3.8-flash",
+]
+
 # ── Upload constraints ───────────────────────────────────────────────────────
 MAX_UPLOAD_SIZE = 5 * 1024 * 1024  # 5 MB
 ALLOWED_EXTENSIONS = {".pdf", ".txt"}

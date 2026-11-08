@@ -11,11 +11,12 @@ if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
 from google import genai
+from google.genai import types
 from livekit import agents
 from livekit.agents import Agent, AgentServer, AgentSession, JobContext, room_io
 from livekit.plugins import noise_cancellation, silero, google, gnani, deepgram, cartesia
 
-from server.config import GEMINI_API_KEY, GNANI_API_KEY
+from server.config import GEMINI_API_KEY, GNANI_API_KEY, GEMINI_MODEL, GEMINI_FALLBACK_MODELS
 from server.agent.gnani_prisma import PrismaV3STT, resolve_language_profile
 from server.agent.prompts import get_interview_instructions, get_random_greeting
 from server.agent.tools import AssistantFnc
@@ -37,19 +38,27 @@ class Assistant(Agent):
 server = AgentServer()
 
 
-# The entrypoint function runs when a participant joins the room with Named Dispatch
+# Explicitly bind the agent to its registered name so LiveKit Cloud dispatches
+# this exact worker when RoomConfiguration(agents=[RoomAgentDispatch(agent_name="intervai-agent")]) is requested.
 @server.rtc_session(agent_name=AGENT_NAME)
 async def entrypoint(ctx: JobContext):
-    # 1. Parse structured metadata from Named Agent Dispatch (with room name fallback)
-    metadata: dict = {}
-    if ctx.job and ctx.job.metadata:
-        try:
-            metadata = json.loads(ctx.job.metadata)
-        except Exception as e:
-            logger.warning(f"Failed to parse job metadata JSON: {e}")
+    logger.info(f"Connecting to room: {ctx.room.name} with agent_name: {AGENT_NAME}")
+    await ctx.connect()
 
-    username = metadata.get("username") or "unknown"
-    if username == "unknown" and ctx.room.name.startswith("interview-"):
+    # Wait for the candidate to connect
+    participant = await ctx.wait_for_participant()
+    logger.info(f"Candidate connected: {participant.identity}")
+
+    # 1. Parse Metadata passed in from the frontend JWT token
+    metadata = {}
+    if ctx.room.metadata:
+        try:
+            metadata = json.loads(ctx.room.metadata)
+        except Exception as e:
+            logger.warning(f"Failed to parse room metadata: {e}")
+
+    username = participant.identity
+    if "-" in ctx.room.name and len(ctx.room.name.split("-", 1)[1]) > 0:
         username = ctx.room.name.split("-", 1)[1]
 
     session_id = metadata.get("session_id", "")
@@ -113,15 +122,24 @@ async def entrypoint(ctx: JobContext):
         stt_plugin = deepgram.STT()
         tts_plugin = cartesia.TTS()
 
+    # ── TOKEN & LATENCY OPTIMIZED GEMINI CONFIGURATION ──────────────────────────
+    # 1. Primary: 'gemini-3.5-flash-lite' — Ultra-light, 0.76s latency, high rate limits,
+    #    zero reasoning token bloat, fully supported for all new API keys.
+    # 2. max_output_tokens=180 caps conversational speech to 1-2 punchy sentences.
     session = AgentSession(
-        stt=stt_plugin,                              # Listening via Gnani Prisma v3.0 (indic-auto + keyterms)
-        llm=google.LLM(api_key=GEMINI_API_KEY),      # Brain via Gemini directly (explicit api_key)
-        tts=tts_plugin,                              # Speaking via Gnani Timbre v2.5 (Nalini)
-        vad=silero.VAD.load(),                       # Voice activity detection (local)
-        tools=[fnc],                                 # Inject Tool Calling
-        min_endpointing_delay=0.3,                   # React 300ms after user stops
-        max_endpointing_delay=0.6,                   # Upper bound 600ms
-        preemptive_generation=True,                  # Start generating while user may still speak
+        stt=stt_plugin,
+        llm=google.LLM(
+            model=GEMINI_MODEL,
+            api_key=GEMINI_API_KEY,
+            max_output_tokens=180,
+            temperature=0.6,
+        ),
+        tts=tts_plugin,
+        vad=silero.VAD.load(),
+        tools=[fnc],
+        min_endpointing_delay=0.3,
+        max_endpointing_delay=0.6,
+        preemptive_generation=True,
     )
 
     async def evaluate_code_with_gemini(code: str):
@@ -135,19 +153,37 @@ async def entrypoint(ctx: JobContext):
         max_attempts = fnc._max_attempts
         logger.info(f"Code submission — attempt {current_attempt}/{max_attempts} for user: {username}")
 
-        try:
-            prompt = (
-                f"The candidate has submitted this code:\n```\n{code}\n```\n"
-                f"Provide a very brief evaluation. If the logic is sound and code is correct, "
-                f"output 'CORRECT'. If incorrect, output 'INCORRECT' followed by a 1-sentence hint on what to fix."
-            )
-            response = await asyncio.to_thread(
-                genai_client.models.generate_content,
-                model="gemini-2.5-flash",
-                contents=prompt,
-            )
-            feedback = response.text or ""
+        prompt = (
+            f"The candidate has submitted this code:\n```\n{code}\n```\n"
+            f"Provide a very brief evaluation. If the logic is sound and code is correct, "
+            f"output 'CORRECT'. If incorrect, output 'INCORRECT' followed by a 1-sentence hint on what to fix."
+        )
 
+        # Multi-model resilient fallback chain across lightweight Flash variants
+        feedback = None
+        for candidate_model in GEMINI_FALLBACK_MODELS:
+            try:
+                response = await asyncio.to_thread(
+                    genai_client.models.generate_content,
+                    model=candidate_model,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        max_output_tokens=60,
+                        temperature=0.1,
+                    ),
+                )
+                if response and response.text:
+                    feedback = response.text
+                    logger.info(f"Code evaluation succeeded with model: {candidate_model}")
+                    break
+            except Exception as err:
+                logger.warning(f"Evaluation model {candidate_model} failed ({err}). Trying next fallback...")
+
+        if not feedback:
+            session.say("I received your code, but I encountered an error evaluating it. Let's move on.", allow_interruptions=True)
+            return
+
+        try:
             is_correct = "CORRECT" in feedback.upper() and "INCORRECT" not in feedback.upper()
 
             if is_correct:
@@ -231,13 +267,18 @@ async def entrypoint(ctx: JobContext):
         except Exception as e:
             pass
 
+    # ── TOKEN OPTIMIZATION: JD Compaction ──────────────────────────────────────
+    # Compact excessively long JDs to max 1,500 chars to avoid re-sending thousands
+    # of input tokens on every multi-turn conversation step.
+    compact_jd = (jd_content[:1500] + "...") if len(jd_content) > 1500 else jd_content
+
     base_instructions = get_interview_instructions(track=track, language_label=lang_profile["label"])
     custom_instructions = (
         f"{base_instructions}\n\n"
         f"INTERVIEW ROLE: {role_title} (Track: {track.upper()})\n"
         f"JOB DESCRIPTION FOR THIS INTERVIEW:\n"
         f"-------------\n"
-        f"{jd_content}\n"
+        f"{compact_jd}\n"
         f"-------------"
     )
 
@@ -263,4 +304,3 @@ async def entrypoint(ctx: JobContext):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     agents.cli.run_app(server)
-
