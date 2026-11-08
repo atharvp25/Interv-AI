@@ -26,6 +26,7 @@ export default function Interview() {
   const { token: jwtToken, user } = useContext(AuthContext)
   
   const [isCodeEditorOpen, setIsCodeEditorOpen] = useState(false)
+  const [completedGuest, setCompletedGuest] = useState(false)
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -35,6 +36,11 @@ export default function Interview() {
         const language = searchParams.get('lang') || localStorage.getItem('intervai_lang') || 'hinglish'
         const track = searchParams.get('track') || localStorage.getItem('intervai_track') || 'tech'
         const sessionId = searchParams.get('session') || localStorage.getItem('intervai_session') || ''
+        const sessionSecret = searchParams.get('secret') || localStorage.getItem('intervai_session_secret') || ''
+
+        if (!sessionId) {
+          throw new Error('No active interview session found. Please initialize a session first.')
+        }
 
         setSessionTrack(track)
         setSessionLang(language)
@@ -46,12 +52,13 @@ export default function Interview() {
           language,
           track,
           session_id: sessionId,
+          session_secret: sessionSecret,
         })
-        const res = await fetch(`${baseUrl}/api/token?${query.toString()}`, {
-          headers: {
-            'Authorization': `Bearer ${jwtToken}`
-          }
-        })
+        const headers = {}
+        if (jwtToken) {
+          headers['Authorization'] = `Bearer ${jwtToken}`
+        }
+        const res = await fetch(`${baseUrl}/api/token?${query.toString()}`, { headers })
         const data = await res.json()
         
         if (!res.ok) throw new Error(data.detail || "Failed to retrieve token")
@@ -68,6 +75,24 @@ export default function Interview() {
     
     fetchToken()
   }, [])
+
+  if (completedGuest) {
+    return (
+      <div className="setup-layout">
+        <div className="glass-panel text-center animate-in" style={{ maxWidth: '480px', padding: '2.5rem' }}>
+          <h2 className="brand-font" style={{ color: 'var(--success)', marginBottom: '0.75rem' }}>
+            Assessment Completed!
+          </h2>
+          <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+            Thank you for completing your voice assessment. Your evaluation has been saved and shared with your assessor.
+          </p>
+          <button className="btn-primary" onClick={() => navigate('/')}>
+            Return to Home
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   if (error) {
     return (
@@ -107,7 +132,13 @@ export default function Interview() {
       }}
       video={false}
       className="interview-container animate-in"
-      onDisconnected={() => navigate('/setup')}
+      onDisconnected={() => {
+        if (jwtToken) {
+          navigate('/dashboard')
+        } else {
+          setCompletedGuest(true)
+        }
+      }}
     >
       <RoomAudioRenderer />
       <RoomEventListener

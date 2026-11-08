@@ -29,3 +29,18 @@
 - **Frontend Upgrades:**
   - Setup UI: Track card selector (`tech` vs `bda`), 11-language dropdown, 1-click presets, and shareable link generator with copy-to-clipboard.
   - Interview UI: Real-time telemetry badges (Track, Language, Encrypted status).
+
+## 4. Roles, Access Control & Hybrid Taker Entry (08 Nov 2026)
+- **Four Roles (`recruiter`, `teacher`, `candidate`, `student`):**
+  - Chosen once at onboarding via an unskippable modal (`POST /api/onboarding`) and locked server-side (`PATCH /api/me` ignores role modifications).
+  - *Production Note:* Open self-selected roles are enabled for hackathon evaluation; production deployment adds domain/organization verification for Recruiters and Teachers.
+- **Google OAuth 2.0 + Judge Guest Mode:**
+  - Primary authentication uses Google Identity Services (`POST /api/auth/google`).
+  - Hackathon judges can click **Explore in Guest Mode**, pick any of the 4 roles in the Role Selection Modal, and preview the tailored Dashboard and Setup screens without logging in. Live voice sessions and assessment link creation are gated behind Google Sign-In to protect Gnani/LiveKit credits.
+- **Hybrid Taker Entry (`/assess/:token`) & One-Claimer Lock:**
+  - Assessment links use 192-bit `secrets.token_urlsafe(24)` tokens stored as SHA-256 hashes (`token_hash`) with `opens_at`, `expires_at`, and `max_attempts`.
+  - Takers can claim a link via Google Sign-In OR Guest Name + Email (`POST /api/assessments/claim`). Once claimed by Taker A, Taker B is blocked (`403`).
+- **Report Ownership & Sharing Policy:**
+  - Assigned assessment reports always appear on the creating Recruiter/Teacher's dashboard.
+  - Default `share_with_taker`: `True` for Teachers (supports student learning), `False` for Recruiters (standard hiring practice), toggleable per assessment (`PATCH /api/assessments/{id}`).
+  - Practice reports are strictly private to the practitioner (`404` for everyone else) and support self-service deletion (`DELETE /api/evaluations/{id}`).

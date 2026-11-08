@@ -7,11 +7,46 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [googleClientId, setGoogleClientId] = useState('');
+
+  // Guest Mode for Hackathon Judges / Explorers
+  const [guestMode, setGuestMode] = useState(() => sessionStorage.getItem('intervai_guest_mode') === 'true');
+  const [guestRole, setGuestRole] = useState(() => sessionStorage.getItem('intervai_guest_role') || '');
+  const [showRoleModal, setShowRoleModal] = useState(false);
+
+  // Modal shown when a Guest Mode visitor clicks "Conduct Interview" or "Start Practice"
+  const [authPromptModal, setAuthPromptModal] = useState({ open: false, reason: '' });
+
   const navigate = useNavigate();
+
+  const getBaseUrl = () => (window.location.hostname === 'localhost' ? 'http://127.0.0.1:8000' : '');
+
+  // Load Google Client ID from backend config
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const res = await fetch(`${getBaseUrl()}/api/auth/config`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.google_client_id) {
+            setGoogleClientId(data.google_client_id);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch auth config:', err);
+      }
+    };
+    fetchConfig();
+  }, []);
 
   useEffect(() => {
     if (token) {
       localStorage.setItem('token', token);
+      // Real login exits Guest Mode
+      sessionStorage.removeItem('intervai_guest_mode');
+      sessionStorage.removeItem('intervai_guest_role');
+      setGuestMode(false);
+      setGuestRole('');
       fetchUser();
     } else {
       localStorage.removeItem('token');
@@ -20,17 +55,28 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token]);
 
+  // Whenever user has needs_onboarding=true OR guestMode is active without a guestRole, force Role Modal open
+  useEffect(() => {
+    if (user && (user.needs_onboarding || !user.role)) {
+      setShowRoleModal(true);
+    } else if (!token && guestMode && !guestRole) {
+      setShowRoleModal(true);
+    }
+  }, [user, token, guestMode, guestRole]);
+
   const fetchUser = async () => {
     try {
-      const baseUrl = window.location.hostname === 'localhost' ? 'http://127.0.0.1:8000' : '';
-      const res = await fetch(`${baseUrl}/api/me`, {
+      const res = await fetch(`${getBaseUrl()}/api/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
         setUser(data);
+        if (data.needs_onboarding || !data.role) {
+          setShowRoleModal(true);
+        }
       } else {
-        setToken(null); // Invalid token
+        setToken(null);
       }
     } catch (err) {
       console.error(err);
@@ -39,41 +85,108 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (username, password) => {
-    const baseUrl = window.location.hostname === 'localhost' ? 'http://127.0.0.1:8000' : '';
-    const res = await fetch(`${baseUrl}/api/login`, {
+  const loginWithGoogle = async (credential) => {
+    const res = await fetch(`${getBaseUrl()}/api/auth/google`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
+      body: JSON.stringify({ credential })
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || "Login failed");
-    
+    if (!res.ok) throw new Error(data.detail || 'Google Sign-In failed');
+
+    setAuthPromptModal({ open: false, reason: '' });
+    setUser(data.user);
     setToken(data.access_token);
+    if (data.needs_onboarding || !data.user?.role) {
+      setShowRoleModal(true);
+    }
     return data;
   };
 
-  const register = async (username, email, password) => {
-    const baseUrl = window.location.hostname === 'localhost' ? 'http://127.0.0.1:8000' : '';
-    const res = await fetch(`${baseUrl}/api/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, email, password })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || "Registration failed");
-    
-    // Auto login after register
-    return await login(username, password);
+  const completeOnboarding = async ({ role, full_name, organization }) => {
+    if (token) {
+      const res = await fetch(`${getBaseUrl()}/api/onboarding`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ role, full_name, organization })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Failed to save role');
+      setUser(data.user);
+      setShowRoleModal(false);
+      return data.user;
+    } else if (guestMode) {
+      sessionStorage.setItem('intervai_guest_role', role);
+      setGuestRole(role);
+      setShowRoleModal(false);
+      return { role, isGuest: true };
+    }
+  };
+
+  const startGuestMode = () => {
+    sessionStorage.setItem('intervai_guest_mode', 'true');
+    sessionStorage.removeItem('intervai_guest_role');
+    setGuestMode(true);
+    setGuestRole('');
+    setShowRoleModal(true);
+    navigate('/dashboard');
+  };
+
+  const openGuestRoleSwitcher = () => {
+    if (guestMode && !token) {
+      setShowRoleModal(true);
+    }
+  };
+
+  const triggerAuthRequired = (reason = 'Sign in with Google is required to create or practice live voice interviews.') => {
+    setAuthPromptModal({ open: true, reason });
+  };
+
+  const closeAuthPrompt = () => {
+    setAuthPromptModal({ open: false, reason: '' });
   };
 
   const logout = () => {
     setToken(null);
+    setUser(null);
+    sessionStorage.removeItem('intervai_guest_mode');
+    sessionStorage.removeItem('intervai_guest_role');
+    setGuestMode(false);
+    setGuestRole('');
+    setShowRoleModal(false);
     navigate('/');
   };
 
+  // Effective user object (either real authenticated user or simulated Guest Explorer)
+  const effectiveRole = user?.role || (guestMode ? guestRole : null);
+  const isAssessor = effectiveRole === 'recruiter' || effectiveRole === 'teacher';
+
   return (
-    <AuthContext.Provider value={{ token, user, login, register, logout, loading }}>
+    <AuthContext.Provider
+      value={{
+        token,
+        user,
+        loading,
+        googleClientId,
+        loginWithGoogle,
+        completeOnboarding,
+        guestMode,
+        guestRole,
+        effectiveRole,
+        isAssessor,
+        startGuestMode,
+        openGuestRoleSwitcher,
+        showRoleModal,
+        setShowRoleModal,
+        authPromptModal,
+        triggerAuthRequired,
+        closeAuthPrompt,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
