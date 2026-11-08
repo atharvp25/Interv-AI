@@ -110,6 +110,16 @@ async def get_interview_session_context(
         keywords = session_doc.get("keywords") or extract_keywords_from_text(jd_text)
         return {
             "session_id": str(session_doc["_id"]),
+            "assessment_id": session_doc.get("assessment_id"),
+            "is_practice": session_doc.get("is_practice", True),
+            "assessor_id": session_doc.get("assessor_id"),
+            "assessor_username": session_doc.get("assessor_username"),
+            "taker_user_id": session_doc.get("taker_user_id"),
+            "taker_username": session_doc.get("taker_username") or session_doc.get("username", username),
+            "taker_name": session_doc.get("taker_name") or session_doc.get("username", username),
+            "taker_email": session_doc.get("taker_email", ""),
+            "share_with_taker": session_doc.get("share_with_taker", True),
+            "jd_file_id": session_doc.get("jd_file_id"),
             "role_title": session_doc.get("role_title", "Custom Interview Role"),
             "track": session_doc.get("track", track),
             "language": session_doc.get("language", language),

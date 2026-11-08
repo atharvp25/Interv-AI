@@ -46,9 +46,9 @@ def _serialize_user(user: dict) -> dict:
         "username": user["username"],
         "email": user.get("email", ""),
         "full_name": user.get("full_name", user["username"]),
-        "role": role or "candidate",
+        "role": role,
         "organization": user.get("organization", ""),
-        "needs_onboarding": role is None,
+        "needs_onboarding": role not in VALID_ROLES,
     }
 
 

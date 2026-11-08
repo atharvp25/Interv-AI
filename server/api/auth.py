@@ -23,7 +23,7 @@ class UserCreate(BaseModel):
     username: str
     password: str
     email: str = ""
-    role: str = "candidate"
+    role: Optional[str] = None
     full_name: str = ""
     organization: str = ""
 
@@ -53,8 +53,8 @@ async def register(user: UserCreate):
     if not clean_username:
         raise HTTPException(status_code=400, detail="Username is required")
 
-    role = user.role.strip().lower() if user.role else "candidate"
-    if role not in VALID_ROLES:
+    role = user.role.strip().lower() if user.role and user.role.strip() else None
+    if role is not None and role not in VALID_ROLES:
         raise HTTPException(
             status_code=400,
             detail=f"Invalid role '{role}'. Must be one of: {', '.join(sorted(VALID_ROLES))}",

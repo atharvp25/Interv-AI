@@ -88,7 +88,8 @@ async def entrypoint(ctx: JobContext):
     )
 
     # Create tool instance (extracted so evaluate_code_with_gemini can access it)
-    fnc = AssistantFnc(username=username, room=ctx.room)
+    merged_session_meta = {**metadata, **(context if isinstance(context, dict) else {})}
+    fnc = AssistantFnc(username=username, room=ctx.room, session_meta=merged_session_meta)
 
     genai_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
