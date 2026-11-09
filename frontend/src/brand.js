@@ -1,3 +1,2 @@
-// Single source of truth for branding. Rename here later.
-export const PLATFORM_NAME = '[PLATFORM_NAME]'
-
+// Single source of truth for branding.
+export const PLATFORM_NAME = 'IntervAI'

@@ -1,54 +1,48 @@
 import React, { memo } from 'react'
 import { FolderOpen, Users } from 'lucide-react'
 
-function EmptyState({ variant = 'assessments', title, description, action, actionLabel, onAction }) {
+function EmptyState({ title = 'No records yet', description = '', actionLabel, onAction, variant = 'folder' }) {
   const Icon = variant === 'candidates' ? Users : FolderOpen
 
   return (
     <div
-      className="panel"
       style={{
-        padding: '3.5rem 2rem',
         textAlign: 'center',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'var(--bg-surface-2)',
-        border: '1px dashed var(--border)',
-        borderRadius: '10px',
+        padding: '32px 24px',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-md)',
+        backgroundColor: 'var(--surface)',
       }}
     >
       <div
         style={{
-          width: '48px',
-          height: '48px',
-          borderRadius: '8px',
-          background: 'var(--primary-soft)',
-          color: 'var(--primary)',
-          display: 'flex',
+          width: '36px',
+          height: '36px',
+          borderRadius: 'var(--radius-sm)',
+          backgroundColor: 'var(--surface-subtle)',
+          border: '1px solid var(--border)',
+          display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
-          marginBottom: '1rem',
+          marginBottom: '12px',
+          color: 'var(--text-secondary)',
         }}
       >
-        <Icon size={24} />
+        <Icon size={18} strokeWidth={1.5} />
       </div>
-
-      <h3 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.35rem' }}>
+      <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600, marginBottom: '4px', color: 'var(--text)' }}>
         {title}
       </h3>
       {description && (
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', maxWidth: '420px', lineHeight: 1.5, margin: '0 auto 1.25rem auto' }}>
+        <p style={{ color: 'var(--text-secondary)', maxWidth: '420px', margin: '0 auto 16px auto', fontSize: 'var(--text-sm)' }}>
           {description}
         </p>
       )}
-
-      {action || (actionLabel && onAction && (
+      {actionLabel && onAction && (
         <button type="button" className="btn-primary" onClick={onAction}>
           {actionLabel}
         </button>
-      ))}
+      )}
     </div>
   )
 }

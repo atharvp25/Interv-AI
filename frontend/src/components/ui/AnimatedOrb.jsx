@@ -1,75 +1,117 @@
 import React, { memo } from 'react'
 
-const PALETTE = {
-  listening: { a: '#2563EB', b: '#0EA5E9', ring: 'rgba(37, 99, 235, 0.25)' },
-  thinking: { a: '#4F46E5', b: '#3B82F6', ring: 'rgba(79, 70, 229, 0.25)' },
-  speaking: { a: '#2563EB', b: '#10B981', ring: 'rgba(37, 99, 235, 0.3)' },
-  idle: { a: '#1E293B', b: '#334155', ring: 'rgba(51, 65, 85, 0.2)' },
-  offline: { a: '#1E293B', b: '#0F172A', ring: 'rgba(30, 41, 59, 0.2)' },
+const STATE_META = {
+  listening: {
+    label: 'Listening',
+    badgeClass: 'pn-badge-success',
+    barColor: 'var(--success-text)',
+    active: true,
+  },
+  thinking: {
+    label: 'Thinking',
+    badgeClass: 'pn-badge-warning',
+    barColor: 'var(--accent)',
+    active: true,
+  },
+  speaking: {
+    label: 'Speaking',
+    badgeClass: 'pn-badge-primary',
+    barColor: 'var(--primary)',
+    active: true,
+  },
+  idle: {
+    label: 'Ready',
+    badgeClass: 'pn-badge',
+    barColor: 'var(--border-strong)',
+    active: false,
+  },
+  offline: {
+    label: 'Disconnected',
+    badgeClass: 'pn-badge-danger',
+    barColor: 'var(--border)',
+    active: false,
+  },
 }
 
-function AnimatedOrb({ state = 'idle', size = 220, bars = 5, children }) {
-  const p = PALETTE[state] || PALETTE.idle
-  const core = size * 0.58
-  const active = state !== 'offline'
+function AnimatedOrb({ state = 'idle', bars = 12, children }) {
+  const meta = STATE_META[state] || STATE_META.idle
 
   return (
     <div
-      role="img"
-      aria-label={`AI interviewer is ${state}`}
-      style={{ position: 'relative', width: size, height: size, display: 'grid', placeItems: 'center' }}
+      role="status"
+      aria-label={`Interviewer status: ${meta.label}`}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '12px',
+        padding: '16px 24px',
+        backgroundColor: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-md)',
+        minWidth: '240px',
+      }}
     >
-      {/* Subtle outer breathing ring */}
-      {active && (
-        <span
-          style={{
-            position: 'absolute',
-            width: core * 1.35,
-            height: core * 1.35,
-            borderRadius: '50%',
-            border: `1px solid ${p.ring}`,
-            opacity: 0.6,
-          }}
-        />
-      )}
+      <style>{`
+        @keyframes b2b-meter {
+          0%, 100% { transform: scaleY(0.25); }
+          50% { transform: scaleY(1); }
+        }
+      `}</style>
 
-      {/* Core Sphere */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '12px' }}>
+        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', fontWeight: 500 }}>
+          Audio channel
+        </span>
+        <span className={`pn-badge ${meta.badgeClass}`}>
+          <span className="pn-dot" />
+          {meta.label}
+        </span>
+      </div>
+
+      {/* Subtle Horizontal Level Meter */}
       <div
+        aria-hidden="true"
         style={{
-          position: 'relative',
-          width: core,
-          height: core,
-          borderRadius: '50%',
-          overflow: 'hidden',
-          background: `linear-gradient(135deg, ${p.a} 0%, ${p.b} 100%)`,
-          boxShadow: `0 8px 30px ${p.ring}`,
-          display: 'grid',
-          placeItems: 'center',
-          transition: 'all 0.4s ease',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '4px',
+          height: '28px',
+          width: '100%',
+          padding: '4px 8px',
+          backgroundColor: 'var(--bg)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-sm)',
         }}
       >
-        {/* Crisp Equalizer Bars */}
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 4, height: core * 0.35 }}>
-          {Array.from({ length: bars }).map((_, i) => (
+        {Array.from({ length: bars }).map((_, i) => {
+          const isSpeaking = state === 'speaking'
+          const isListening = state === 'listening'
+          const isThinking = state === 'thinking'
+          const baseScale = isSpeaking ? 0.85 : isListening ? 0.55 : isThinking ? 0.35 : 0.2
+          return (
             <span
               key={i}
               style={{
-                width: 4,
-                height: '100%',
-                borderRadius: 2,
-                background: '#FFFFFF',
+                flex: 1,
+                maxWidth: '6px',
+                height: '18px',
+                borderRadius: '2px',
+                backgroundColor: meta.barColor,
                 transformOrigin: 'center',
-                transform: state === 'speaking' ? undefined : `scaleY(${state === 'offline' ? 0.15 : 0.25 + (i % 3) * 0.1})`,
-                animation: state === 'speaking'
-                  ? `pn-bar ${0.6 + (i % 4) * 0.15}s ${i * 0.08}s ease-in-out infinite`
-                  : state === 'listening' ? `pn-bar 2s ${i * 0.15}s ease-in-out infinite` : 'none',
-                opacity: state === 'offline' ? 0.35 : 0.95,
+                transform: `scaleY(${baseScale})`,
+                animation: meta.active
+                  ? `b2b-meter ${isSpeaking ? 0.55 + (i % 3) * 0.12 : 1.1 + (i % 4) * 0.15}s ${(i * 0.07).toFixed(2)}s ease-in-out infinite`
+                  : 'none',
+                opacity: meta.active ? 0.9 : 0.45,
               }}
             />
-          ))}
-        </div>
-        {children}
+          )
+        })}
       </div>
+
+      {children}
     </div>
   )
 }
