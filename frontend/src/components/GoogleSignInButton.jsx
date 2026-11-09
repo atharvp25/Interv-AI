@@ -25,12 +25,11 @@ export default function GoogleSignInButton({ onSuccessRedirect, text = 'signin_w
                 const data = await loginWithGoogle(response.credential);
                 if (onSuccessRedirect) onSuccessRedirect(data);
               } catch (err) {
-                setError(err.message || 'Google Sign-In failed');
+                setError(err.message || 'Google sign-in failed');
               }
             },
           });
 
-          // Clear previous render to prevent duplicate buttons
           if (gsiContainerRef.current) {
             gsiContainerRef.current.innerHTML = '';
           }
@@ -44,7 +43,7 @@ export default function GoogleSignInButton({ onSuccessRedirect, text = 'signin_w
           });
           setGsiLoaded(true);
         } catch (err) {
-          console.error('Error initializing Google Sign-In:', err);
+          console.error('Error initializing Google sign-in:', err);
         }
       } else if (attempts > 30) {
         clearInterval(interval);
@@ -63,28 +62,30 @@ export default function GoogleSignInButton({ onSuccessRedirect, text = 'signin_w
         }
       });
     } else {
-      setError('Google Sign-In is connecting. Please check your network or try again.');
+      setError('Google sign-in is connecting. Check your network connection or try Guest preview.');
     }
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
       {error && (
-        <div style={{
-          background: 'rgba(239, 68, 68, 0.1)',
-          color: 'var(--error)',
-          border: '1px solid rgba(239, 68, 68, 0.25)',
-          padding: '0.6rem 0.85rem',
-          borderRadius: '6px',
-          marginBottom: '0.85rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.4rem',
-          fontSize: '0.82rem',
-          width: '100%',
-          maxWidth: '320px',
-        }}>
-          <AlertCircle size={15} /> {error}
+        <div
+          style={{
+            background: 'var(--danger-bg)',
+            color: 'var(--danger-text)',
+            border: '1px solid var(--border-strong)',
+            padding: '8px 12px',
+            borderRadius: 'var(--radius-btn)',
+            marginBottom: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '13px',
+            width: '100%',
+            maxWidth: '320px',
+          }}
+        >
+          <AlertCircle size={16} strokeWidth={1.5} /> {error}
         </div>
       )}
 
@@ -92,7 +93,7 @@ export default function GoogleSignInButton({ onSuccessRedirect, text = 'signin_w
       <div
         ref={gsiContainerRef}
         style={{
-          minHeight: '44px',
+          minHeight: gsiLoaded ? '44px' : '0px',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
@@ -100,31 +101,13 @@ export default function GoogleSignInButton({ onSuccessRedirect, text = 'signin_w
         }}
       />
 
-      {/* Standard Official High-Contrast White Google Button */}
+      {/* Fallback High-Contrast Button */}
       {!gsiLoaded && (
         <button
           type="button"
           onClick={handleCustomClick}
           className="btn-google-standard"
-          style={{
-            width: '100%',
-            maxWidth: '320px',
-            height: '42px',
-            padding: '0 1.25rem',
-            borderRadius: '6px',
-            fontWeight: 600,
-            fontSize: '0.88rem',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.75rem',
-            background: '#FFFFFF',
-            color: '#1F2937',
-            border: '1px solid #D1D5DB',
-            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
-            cursor: 'pointer',
-            transition: 'background-color 0.15s, border-color 0.15s',
-          }}
+          style={{ width: '100%', maxWidth: '320px' }}
         >
           <GoogleGIcon size={18} />
           <span>Sign in with Google</span>

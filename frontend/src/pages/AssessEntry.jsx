@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { AuthContext } from '../context/AuthContext';
 import GoogleSignInButton from '../components/GoogleSignInButton';
 import {
@@ -12,8 +11,7 @@ import {
   AlertTriangle,
   ArrowRight,
   UserCheck,
-  Sparkles,
-  Lock,
+  Mic,
 } from 'lucide-react';
 import { SkeletonCard } from '../components/ui/Skeleton';
 
@@ -61,7 +59,7 @@ export default function AssessEntry() {
   const handleStartAssessment = async (e) => {
     e.preventDefault();
     if (!consent) {
-      setClaimError('Please check the consent box before starting the voice assessment.');
+      setClaimError('Please confirm the audio and evaluation consent box before starting.');
       return;
     }
     setClaiming(true);
@@ -107,7 +105,7 @@ export default function AssessEntry() {
 
   if (loading) {
     return (
-      <div style={{ maxWidth: '580px', margin: '4rem auto', padding: '0 1.5rem' }}>
+      <div style={{ maxWidth: '580px', margin: '48px auto', padding: '0 24px' }}>
         <SkeletonCard rows={5} />
       </div>
     );
@@ -115,13 +113,15 @@ export default function AssessEntry() {
 
   if (error) {
     return (
-      <div style={{ maxWidth: '540px', margin: '4rem auto', padding: '0 1.5rem' }}>
-        <div className="panel" style={{ textAlign: 'center', padding: '2.5rem', borderRadius: '12px' }}>
-          <AlertTriangle size={40} color="var(--error)" style={{ marginBottom: '1rem' }} />
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Assessment Link Unavailable</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '1.5rem' }}>{error}</p>
-          <button className="btn-secondary" onClick={() => navigate('/')}>
-            Return Home
+      <div style={{ maxWidth: '540px', margin: '48px auto', padding: '0 24px' }}>
+        <div className="panel" style={{ textAlign: 'center', padding: '32px' }}>
+          <AlertTriangle size={32} strokeWidth={1.5} color="var(--danger-text)" style={{ marginBottom: '12px' }} />
+          <h2 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '8px', color: 'var(--text)' }}>
+            Assessment link unavailable
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '20px' }}>{error}</p>
+          <button type="button" className="btn-secondary" onClick={() => navigate('/')}>
+            Return to home
           </button>
         </div>
       </div>
@@ -131,143 +131,135 @@ export default function AssessEntry() {
   const isTech = assessment?.track === 'tech';
 
   return (
-    <div style={{ maxWidth: '600px', margin: '3rem auto', padding: '0 1.5rem', width: '100%' }}>
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="panel"
-        style={{ padding: '2.2rem', borderRadius: '12px', position: 'relative' }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.1rem' }}>
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              padding: '0.25rem 0.65rem',
-              borderRadius: '6px',
-              fontSize: '0.78rem',
-              fontWeight: 600,
-              background: 'var(--primary-soft)',
-              color: 'var(--primary)',
-              border: '1px solid rgba(37, 99, 235, 0.25)',
-            }}
-          >
-            {isTech ? <Code size={14} /> : <Briefcase size={14} />}
-            {isTech ? 'Practical Coding & Oral Viva' : 'BDA Sales & Objection Role-Play'}
+    <div style={{ maxWidth: '600px', margin: '40px auto', padding: '0 24px', width: '100%' }}>
+      <div className="panel" style={{ padding: '32px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+          <span className="pn-badge pn-badge-primary">
+            {isTech ? <Code size={14} strokeWidth={1.5} /> : <Briefcase size={14} strokeWidth={1.5} />}
+            {isTech ? 'Practical coding & oral viva' : 'BDA sales & objection role-play'}
           </span>
 
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              padding: '0.25rem 0.65rem',
-              borderRadius: '6px',
-              fontSize: '0.78rem',
-              fontWeight: 600,
-              background: 'var(--bg-surface-2)',
-              border: '1px solid var(--border)',
-              color: 'var(--text-muted)',
-            }}
-          >
-            <Globe size={14} /> {assessment.language?.toUpperCase()}
+          <span className="pn-badge">
+            <Globe size={14} strokeWidth={1.5} /> Language: {assessment.language?.toUpperCase()}
           </span>
         </div>
 
-        <h1 style={{ fontSize: '1.65rem', marginBottom: '0.35rem', fontWeight: 700, color: 'var(--text-main)' }}>
+        <h1 style={{ fontSize: '24px', marginBottom: '6px', fontWeight: 600, color: 'var(--text)' }}>
           {assessment.role_title}
         </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '1.5rem' }}>
-          Assigned by <strong style={{ color: 'var(--text-main)' }}>{assessment.owner_name}</strong>
-          {assessment.owner_organization ? ` (${assessment.owner_organization})` : ''} •{' '}
-          <span style={{ textTransform: 'capitalize' }}>{assessment.owner_role}</span> Assessment
+        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '20px' }}>
+          Assigned by <strong style={{ color: 'var(--text)' }}>{assessment.owner_name}</strong>
+          {assessment.owner_organization ? ` (${assessment.owner_organization})` : ''} ·{' '}
+          <span style={{ textTransform: 'capitalize' }}>{assessment.owner_role}</span> assessment
         </p>
 
+        {/* Session Parameters */}
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-            gap: '0.75rem',
-            padding: '0.85rem 1rem',
-            borderRadius: '8px',
-            background: 'var(--bg-surface-2)',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+            gap: '12px',
+            padding: '12px 16px',
+            borderRadius: 'var(--radius-btn)',
+            background: 'var(--bg)',
             border: '1px solid var(--border)',
-            marginBottom: '1.5rem',
-            fontSize: '0.82rem',
+            marginBottom: '20px',
+            fontSize: '13px',
+            color: 'var(--text-secondary)',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Sparkles size={15} color="var(--primary)" />
-            <span><strong>{assessment.keywords_count}</strong> Boosted Keyterms</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Mic size={15} strokeWidth={1.5} color="var(--text-muted)" />
+            <span>Voice &amp; live transcript</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Clock size={15} color="var(--primary)" />
-            <span>
-              Attempts: <strong>{assessment.attempts_used}/{assessment.max_attempts}</strong>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Clock size={15} strokeWidth={1.5} color="var(--text-muted)" />
+            <span className="mono-font">
+              Attempts: <strong style={{ color: 'var(--text)' }}>{assessment.attempts_used}/{assessment.max_attempts}</strong>
             </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <ShieldCheck size={15} color="var(--primary)" />
-            <span>One-Claimer Protected</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <ShieldCheck size={15} strokeWidth={1.5} color="var(--text-muted)" />
+            <span>Single-claimer bound</span>
           </div>
+        </div>
+
+        {/* Disclosure Callout */}
+        <div
+          style={{
+            padding: '12px 16px',
+            borderRadius: 'var(--radius-btn)',
+            background: 'var(--accent-soft)',
+            color: 'var(--accent-soft-text)',
+            border: '1px solid var(--border-strong)',
+            fontSize: '13px',
+            lineHeight: 1.5,
+            marginBottom: '20px',
+          }}
+        >
+          <strong>Session disclosure:</strong> This interview is conducted by an AI voice examiner, transcribed in real time, and shared with the human assessor ({assessment.owner_name}) for final review.
         </div>
 
         {claimError && (
           <div
             style={{
-              background: 'rgba(239, 68, 68, 0.1)',
-              color: 'var(--error)',
-              border: '1px solid rgba(239, 68, 68, 0.25)',
-              padding: '0.75rem 1rem',
-              borderRadius: '8px',
-              marginBottom: '1.25rem',
-              fontSize: '0.84rem',
+              background: 'var(--danger-bg)',
+              color: 'var(--danger-text)',
+              border: '1px solid var(--border-strong)',
+              padding: '10px 14px',
+              borderRadius: 'var(--radius-btn)',
+              marginBottom: '16px',
+              fontSize: '13px',
             }}
           >
             {claimError}
           </div>
         )}
 
-        <form onSubmit={handleStartAssessment} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <form onSubmit={handleStartAssessment} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {user ? (
             <div
               style={{
-                padding: '0.85rem 1rem',
-                borderRadius: '8px',
-                background: 'var(--primary-soft)',
-                border: '1px solid rgba(37, 99, 235, 0.25)',
+                padding: '12px 16px',
+                borderRadius: 'var(--radius-btn)',
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.6rem',
-                fontSize: '0.86rem',
+                gap: '8px',
+                fontSize: '13px',
+                color: 'var(--text-secondary)',
               }}
             >
-              <UserCheck size={18} color="var(--primary)" />
+              <UserCheck size={16} strokeWidth={1.5} color="var(--text)" />
               <span>
-                Signed in as <strong>{user.full_name || user.username}</strong> ({user.email}). This session will be bound to your account.
+                Signed in as <strong style={{ color: 'var(--text)' }}>{user.full_name || user.username}</strong> ({user.email}).
               </span>
             </div>
           ) : (
             <>
               <div>
-                <label style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.35rem', display: 'block' }}>Your Full Name *</label>
+                <label style={{ fontSize: '13px', fontWeight: 500, marginBottom: '6px', display: 'block', color: 'var(--text)' }}>
+                  Full name *
+                </label>
                 <input
                   type="text"
                   required
                   value={takerName}
                   onChange={(e) => setTakerName(e.target.value)}
-                  placeholder="Enter your full name (for your evaluation report)"
+                  placeholder="Enter your full name for the evaluation report"
                 />
               </div>
               <div>
-                <label style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.35rem', display: 'block' }}>Your Email Address *</label>
+                <label style={{ fontSize: '13px', fontWeight: 500, marginBottom: '6px', display: 'block', color: 'var(--text)' }}>
+                  Email address *
+                </label>
                 <input
                   type="email"
                   required
                   value={takerEmail}
                   onChange={(e) => setTakerEmail(e.target.value)}
-                  placeholder="you@college.edu or you@example.com"
+                  placeholder="you@institution.edu or you@company.com"
                 />
               </div>
             </>
@@ -278,15 +270,14 @@ export default function AssessEntry() {
             style={{
               display: 'flex',
               alignItems: 'flex-start',
-              gap: '0.65rem',
-              fontSize: '0.8rem',
-              color: 'var(--text-muted)',
+              gap: '10px',
+              fontSize: '13px',
+              color: 'var(--text-secondary)',
               cursor: 'pointer',
-              lineHeight: 1.45,
-              marginTop: '0.25rem',
-              padding: '0.75rem',
-              borderRadius: '8px',
-              background: 'var(--bg-surface-2)',
+              lineHeight: 1.5,
+              padding: '12px',
+              borderRadius: 'var(--radius-btn)',
+              background: 'var(--bg)',
               border: '1px solid var(--border)',
             }}
           >
@@ -297,7 +288,7 @@ export default function AssessEntry() {
               style={{ width: '16px', height: '16px', marginTop: '2px', accentColor: 'var(--primary)' }}
             />
             <span>
-              I consent to real-time microphone audio processing via Gnani Prisma STT and AI-assisted evaluation. I understand the human assessor makes the final decision.
+              I understand that this session is AI-conducted, my microphone audio is transcribed in real time via Gnani Prisma STT, and the transcript and scorecard will be shared with the human assessor for final grading or hiring review.
             </span>
           </label>
 
@@ -305,21 +296,21 @@ export default function AssessEntry() {
             type="submit"
             className="btn-primary"
             disabled={claiming}
-            style={{ width: '100%', padding: '0.8rem', fontSize: '0.92rem', justifyContent: 'center', marginTop: '0.35rem', borderRadius: '8px' }}
+            style={{ width: '100%', padding: '12px', fontSize: '14px', justifyContent: 'center' }}
           >
-            {claiming ? 'Claiming & Locking Session...' : 'Claim & Start Live Voice Assessment'} <ArrowRight size={16} />
+            {claiming ? 'Claiming & locking session...' : 'Confirm consent & start voice session'} <ArrowRight size={16} strokeWidth={1.5} />
           </button>
         </form>
 
         {!user && (
-          <div style={{ marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border)', textAlign: 'center' }}>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
-              Or sign in with Google to link this assessment to your Student/Candidate dashboard:
+          <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--border)', textAlign: 'center' }}>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+              Optional: Sign in with Google to save this session to your account history
             </p>
             <GoogleSignInButton />
           </div>
         )}
-      </motion.div>
+      </div>
     </div>
   );
 }

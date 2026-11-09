@@ -1,16 +1,14 @@
 import React, { useContext } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Sparkles, LogOut, Eye, RefreshCw, LayoutDashboard, PlusCircle } from 'lucide-react'
+import { LogOut, Eye, RefreshCw, LayoutDashboard, Plus, Mic } from 'lucide-react'
 import { AuthContext } from '../context/AuthContext'
-import ThemeToggle from './ui/ThemeToggle'
-import Badge from './ui/Badge'
 import { PLATFORM_NAME } from '../brand'
 
-const ROLE_BADGES = {
-  teacher: { label: 'Teacher', tone: 'primary' },
-  recruiter: { label: 'Recruiter', tone: 'secondary' },
-  student: { label: 'Student', tone: 'primary' },
-  candidate: { label: 'Candidate', tone: 'secondary' },
+const ROLE_LABELS = {
+  teacher: 'Faculty',
+  recruiter: 'Recruiter',
+  student: 'Student',
+  candidate: 'Candidate',
 }
 
 export default function Header() {
@@ -19,7 +17,6 @@ export default function Header() {
     logout,
     token,
     guestMode,
-    guestRole,
     effectiveRole,
     isAssessor,
     isSuperAdmin,
@@ -29,63 +26,64 @@ export default function Header() {
   } = useContext(AuthContext)
 
   const location = useLocation()
-  const roleMeta = ROLE_BADGES[effectiveRole] || ROLE_BADGES.candidate
+  const roleLabel = ROLE_LABELS[effectiveRole] || 'Candidate'
 
   const navLinkStyle = (active) => ({
     textDecoration: 'none',
-    color: active ? 'var(--primary)' : 'var(--text-muted)',
-    fontWeight: 600,
-    fontSize: '0.86rem',
+    color: active ? 'var(--text)' : 'var(--text-secondary)',
+    fontWeight: active ? 600 : 500,
+    fontSize: '14px',
     display: 'inline-flex',
     alignItems: 'center',
-    gap: '0.4rem',
-    padding: '0.4rem 0.75rem',
-    borderRadius: '6px',
-    background: active ? 'var(--primary-soft)' : 'transparent',
-    transition: 'all 0.15s ease',
+    gap: '6px',
+    padding: '6px 12px',
+    borderRadius: 'var(--radius-btn)',
+    background: active ? 'var(--bg-subtle)' : 'transparent',
+    border: active ? '1px solid var(--border)' : '1px solid transparent',
   })
 
   return (
-    <nav className="navbar" style={{ padding: '0.75rem 1.75rem' }} aria-label="Main navigation">
+    <nav className="navbar" aria-label="Main navigation">
       {/* Brand Logo */}
       <Link to={token || guestMode ? '/dashboard' : '/'} style={{ textDecoration: 'none' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div
             style={{
-              width: '32px',
-              height: '32px',
+              width: '30px',
+              height: '30px',
               borderRadius: '6px',
-              background: 'var(--primary)',
+              background: 'var(--sidebar)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#FFFFFF',
+              color: 'var(--surface)',
+              border: '1px solid var(--border-strong)',
             }}
           >
-            <Sparkles size={17} />
+            <Mic size={16} strokeWidth={1.5} />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
-            <span style={{ fontSize: '1.15rem', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <span style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text)' }}>
               {PLATFORM_NAME}
             </span>
-            <span style={{ fontSize: '0.65rem', fontWeight: 500, color: 'var(--text-muted)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-              Voice Assessment Platform
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 400 }}>
+              Voice assessment &amp; viva studio
             </span>
           </div>
         </div>
       </Link>
 
       {/* Navigation Controls */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
         {token ? (
           <>
             <Link to="/dashboard" style={navLinkStyle(location.pathname === '/dashboard')}>
-              <LayoutDashboard size={14} /> Dashboard
+              <LayoutDashboard size={16} strokeWidth={1.5} /> Workspace
             </Link>
 
             <Link to="/setup" style={navLinkStyle(location.pathname === '/setup')}>
-              <PlusCircle size={14} />
-              {isAssessor ? (effectiveRole === 'teacher' ? 'Create Viva' : 'Create Screening') : 'Start Practice'}
+              <Plus size={16} strokeWidth={1.5} />
+              {isAssessor ? (effectiveRole === 'teacher' ? 'New viva link' : 'New screening link') : 'New practice run'}
             </Link>
 
             {isSuperAdmin ? (
@@ -93,16 +91,16 @@ export default function Header() {
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '0.35rem',
-                  background: 'var(--primary-soft)',
-                  border: '1px solid rgba(37, 99, 235, 0.25)',
-                  borderRadius: '6px',
-                  padding: '0.2rem 0.55rem',
+                  gap: '6px',
+                  background: 'var(--accent-soft)',
+                  border: '1px solid var(--border-strong)',
+                  borderRadius: 'var(--radius-btn)',
+                  padding: '4px 10px',
                 }}
-                title="Super Admin Role Switcher"
+                title="Role view switcher"
               >
-                <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--primary)' }}>
-                  Super Admin:
+                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--accent-soft-text)' }}>
+                  Role view:
                 </span>
                 <select
                   value={effectiveRole || 'recruiter'}
@@ -113,82 +111,78 @@ export default function Header() {
                   style={{
                     background: 'transparent',
                     border: 'none',
-                    fontSize: '0.76rem',
+                    fontSize: '12px',
                     fontWeight: 600,
-                    color: 'var(--text-main)',
+                    color: 'var(--text)',
                     cursor: 'pointer',
-                    padding: '0.1rem 0.2rem',
-                    outline: 'none',
+                    padding: '2px 4px',
+                    width: 'auto',
                   }}
                 >
-                  <option value="recruiter" style={{ background: 'var(--bg-surface)' }}>Recruiter</option>
-                  <option value="teacher" style={{ background: 'var(--bg-surface)' }}>Teacher</option>
-                  <option value="candidate" style={{ background: 'var(--bg-surface)' }}>Candidate</option>
-                  <option value="student" style={{ background: 'var(--bg-surface)' }}>Student</option>
+                  <option value="recruiter">Recruiter</option>
+                  <option value="teacher">Faculty</option>
+                  <option value="candidate">Candidate</option>
+                  <option value="student">Student</option>
                 </select>
               </div>
             ) : (
               effectiveRole && (
-                <Badge tone={roleMeta.tone}>
-                  <span>{roleMeta.label}</span>
-                </Badge>
+                <span className="pn-badge pn-badge-primary">
+                  {roleLabel}
+                </span>
               )
             )}
 
-            <span style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: '0.82rem', padding: '0 0.25rem' }}>
+            <span style={{ color: 'var(--text-secondary)', fontWeight: 500, fontSize: '13px', padding: '0 4px' }}>
               {user?.full_name || user?.username}
             </span>
 
-            <ThemeToggle />
-
             <button
+              type="button"
               onClick={logout}
               className="btn-secondary"
-              style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+              style={{ padding: '6px 12px', fontSize: '13px' }}
             >
-              <LogOut size={13} /> Logout
+              <LogOut size={14} strokeWidth={1.5} /> Sign out
             </button>
           </>
         ) : guestMode ? (
           <>
             <Link to="/dashboard" style={navLinkStyle(location.pathname === '/dashboard')}>
-              <LayoutDashboard size={14} /> Dashboard
+              <LayoutDashboard size={16} strokeWidth={1.5} /> Workspace
             </Link>
 
             <Link to="/setup" style={navLinkStyle(location.pathname === '/setup')}>
-              <PlusCircle size={14} />
-              {isAssessor ? (effectiveRole === 'teacher' ? 'Create Viva' : 'Create Screening') : 'Practice'}
+              <Plus size={16} strokeWidth={1.5} />
+              {isAssessor ? (effectiveRole === 'teacher' ? 'New viva link' : 'New screening link') : 'Practice'}
             </Link>
 
-            <span className="pn-badge pn-badge-secondary" style={{ fontSize: '0.75rem' }}>
-              Preview: {roleMeta.label}
+            <span className="pn-badge pn-badge-primary">
+              Guest preview: {roleLabel}
             </span>
 
             <button
+              type="button"
               onClick={openGuestRoleSwitcher}
               className="btn-secondary"
-              style={{ padding: '0.38rem 0.75rem', fontSize: '0.78rem' }}
+              style={{ padding: '6px 12px', fontSize: '13px' }}
             >
-              <RefreshCw size={12} /> Switch Role
+              <RefreshCw size={14} strokeWidth={1.5} /> Switch role
             </button>
-
-            <ThemeToggle />
 
             <Link to="/login" className="btn-google-nav">
               <GoogleGIcon size={16} />
-              <span>Sign in with Google</span>
+              <span>Sign in</span>
             </Link>
           </>
         ) : (
           <>
-            <ThemeToggle />
-
             <button
+              type="button"
               onClick={startGuestMode}
               className="btn-secondary"
-              style={{ padding: '0.45rem 0.95rem', fontSize: '0.84rem' }}
             >
-              <Eye size={14} /> Guest Mode
+              <Eye size={16} strokeWidth={1.5} /> Guest preview
             </button>
 
             <Link to="/login" className="btn-google-nav">
