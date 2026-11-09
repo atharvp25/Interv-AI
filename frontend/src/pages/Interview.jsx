@@ -11,7 +11,7 @@ import {
   useLocalParticipant
 } from '@livekit/components-react'
 import '@livekit/components-styles'
-import { Activity, Shield, TerminalSquare } from 'lucide-react'
+import { Activity, Shield, TerminalSquare, CheckCircle2, Clock } from 'lucide-react'
 import { AuthContext } from '../context/AuthContext'
 
 export default function Interview() {
@@ -23,10 +23,12 @@ export default function Interview() {
   const [keywordsCount, setKeywordsCount] = useState(0)
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { token: jwtToken, user } = useContext(AuthContext)
+  const { token: jwtToken, user, isSuperAdmin } = useContext(AuthContext)
   
   const [isCodeEditorOpen, setIsCodeEditorOpen] = useState(false)
   const [completedGuest, setCompletedGuest] = useState(false)
+  const [isInterviewCompleted, setIsInterviewCompleted] = useState(false)
+  const [liveTelemetry, setLiveTelemetry] = useState(null)
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -75,6 +77,19 @@ export default function Interview() {
     
     fetchToken()
   }, [])
+
+  useEffect(() => {
+    if (isInterviewCompleted) {
+      const timer = setTimeout(() => {
+        if (jwtToken) {
+          navigate('/dashboard')
+        } else {
+          setCompletedGuest(true)
+        }
+      }, 3500)
+      return () => clearTimeout(timer)
+    }
+  }, [isInterviewCompleted, jwtToken, navigate])
 
   if (completedGuest) {
     return (
@@ -144,7 +159,131 @@ export default function Interview() {
       <RoomEventListener
         onOpenEditor={() => setIsCodeEditorOpen(true)}
         onCloseEditor={() => setIsCodeEditorOpen(false)}
+        onInterviewCompleted={() => setIsInterviewCompleted(true)}
+        onTelemetry={setLiveTelemetry}
       />
+
+      {/* Super Admin Live Latency HUD Overlay */}
+      {isSuperAdmin && liveTelemetry && (
+        <div
+          className="fade-in"
+          style={{
+            position: 'fixed',
+            top: '18px',
+            right: '18px',
+            background: 'rgba(15, 23, 42, 0.94)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(239, 68, 68, 0.45)',
+            borderRadius: '12px',
+            padding: '0.85rem 1.15rem',
+            zIndex: 999,
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
+            color: '#fff',
+            minWidth: '320px',
+            pointerEvents: 'none',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.4rem' }}>
+            <span style={{ fontWeight: 700, fontSize: '0.86rem', color: '#f87171', display: 'flex', alignItems: 'center', gap: '5px' }}>
+              ⚡ Super Admin Latency HUD (Turn #{liveTelemetry.turn})
+            </span>
+            <span style={{ fontSize: '0.68rem', fontWeight: 700, background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', padding: '0.15rem 0.45rem', borderRadius: '10px', border: '1px solid rgba(16, 185, 129, 0.4)' }}>
+              LIVE
+            </span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', textAlign: 'center' }}>
+            <div style={{ background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.25)', padding: '0.45rem 0.3rem', borderRadius: '8px' }}>
+              <div style={{ fontSize: '0.66rem', color: '#7dd3fc', marginBottom: '0.15rem' }}>STT</div>
+              <div style={{ fontWeight: 700, fontSize: '0.98rem', color: '#38bdf8' }}>{liveTelemetry.stt_ms}<span style={{ fontSize: '0.65rem' }}>ms</span></div>
+            </div>
+            <div style={{ background: 'rgba(192, 132, 252, 0.08)', border: '1px solid rgba(192, 132, 252, 0.25)', padding: '0.45rem 0.3rem', borderRadius: '8px' }}>
+              <div style={{ fontSize: '0.66rem', color: '#d8b4fe', marginBottom: '0.15rem' }}>LLM</div>
+              <div style={{ fontWeight: 700, fontSize: '0.98rem', color: '#c084fc' }}>{liveTelemetry.llm_ms}<span style={{ fontSize: '0.65rem' }}>ms</span></div>
+            </div>
+            <div style={{ background: 'rgba(52, 211, 153, 0.08)', border: '1px solid rgba(52, 211, 153, 0.25)', padding: '0.45rem 0.3rem', borderRadius: '8px' }}>
+              <div style={{ fontSize: '0.66rem', color: '#86efac', marginBottom: '0.15rem' }}>TTS</div>
+              <div style={{ fontWeight: 700, fontSize: '0.98rem', color: '#34d399' }}>{liveTelemetry.tts_ms}<span style={{ fontSize: '0.65rem' }}>ms</span></div>
+            </div>
+            <div style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.4)', padding: '0.45rem 0.3rem', borderRadius: '8px' }}>
+              <div style={{ fontSize: '0.66rem', color: '#fca5a5', marginBottom: '0.15rem' }}>Turnaround</div>
+              <div style={{ fontWeight: 700, fontSize: '0.98rem', color: '#f87171' }}>
+                {(liveTelemetry.total_e2e_ms / 1000).toFixed(2)}<span style={{ fontSize: '0.65rem' }}>s</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Auto-Disconnect Completion Overlay */}
+      {isInterviewCompleted && (
+        <div
+          className="fade-in"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(10, 15, 30, 0.94)',
+            backdropFilter: 'blur(10px)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            textAlign: 'center',
+            padding: '2rem',
+          }}
+        >
+          <div
+            style={{
+              width: '74px',
+              height: '74px',
+              borderRadius: '50%',
+              background: 'rgba(16, 185, 129, 0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '1.25rem',
+              border: '2px solid rgba(16, 185, 129, 0.35)',
+            }}
+          >
+            <CheckCircle2 size={42} color="var(--success)" />
+          </div>
+          <h2 className="brand-font" style={{ fontSize: '2.1rem', color: '#fff', marginBottom: '0.4rem', fontWeight: 700 }}>
+            Interview Completed!
+          </h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.96rem', maxWidth: '440px', lineHeight: 1.55, marginBottom: '1.75rem' }}>
+            Your interview is over and your report has been successfully submitted. Thank you!
+          </p>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.5rem 1.15rem',
+              borderRadius: '20px',
+              background: 'rgba(37, 99, 235, 0.15)',
+              color: 'var(--primary)',
+              fontSize: '0.86rem',
+              fontWeight: 600,
+              border: '1px solid rgba(37, 99, 235, 0.3)',
+            }}
+          >
+            <Clock size={15} /> Leaving room in 2s...
+          </div>
+          <button
+            className="btn-primary"
+            style={{ marginTop: '1.25rem', fontSize: '0.9rem', padding: '0.55rem 1.4rem' }}
+            onClick={() => {
+              if (jwtToken) {
+                navigate('/dashboard')
+              } else {
+                setCompletedGuest(true)
+              }
+            }}
+          >
+            {jwtToken ? 'Go to Dashboard' : 'Finish & Return Home'}
+          </button>
+        </div>
+      )}
 
       <div className={`interview-split ${isCodeEditorOpen ? 'split-active' : ''}`}>
         {/* Interview Panel — full width by default, 50% when code editor opens */}
@@ -270,7 +409,7 @@ function AgentVisualizer() {
   )
 }
 
-function RoomEventListener({ onOpenEditor, onCloseEditor }) {
+function RoomEventListener({ onOpenEditor, onCloseEditor, onInterviewCompleted, onTelemetry }) {
   const room = useRoomContext();
   
   useEffect(() => {
@@ -282,28 +421,86 @@ function RoomEventListener({ onOpenEditor, onCloseEditor }) {
           onOpenEditor();
         } else if (payload.type === 'disable_code_editor') {
           onCloseEditor();
+        } else if (payload.type === 'latency_telemetry') {
+          if (onTelemetry) onTelemetry(payload.data);
+        } else if (payload.type === 'interview_completed') {
+          if (onInterviewCompleted) onInterviewCompleted();
+          // Automatically disconnect the WebRTC room after 2.5 seconds
+          setTimeout(() => {
+            try {
+              room.disconnect();
+            } catch (err) {
+              console.error('Room disconnect error:', err);
+            }
+          }, 2500);
         }
       } catch (e) {}
     };
     room.on('dataReceived', handleData);
     return () => room.off('dataReceived', handleData);
-  }, [room, onOpenEditor, onCloseEditor]);
+  }, [room, onOpenEditor, onCloseEditor, onInterviewCompleted, onTelemetry]);
 
   return null;
 }
 
+const CODE_LANGUAGES = {
+  py: {
+    id: 'py',
+    label: 'Python (3.x)',
+    shortLabel: 'Python 3',
+    filename: 'workspace.py',
+    template: `# Write your Python solution here\ndef solution():\n    pass\n`,
+  },
+  c: {
+    id: 'c',
+    label: 'C (C11)',
+    shortLabel: 'C (C11)',
+    filename: 'workspace.c',
+    template: `// Write your C solution here\n#include <stdio.h>\n\nint main() {\n    // Your code here\n    return 0;\n}\n`,
+  },
+  cpp: {
+    id: 'cpp',
+    label: 'C++ (17/20)',
+    shortLabel: 'C++',
+    filename: 'workspace.cpp',
+    template: `// Write your C++ solution here\n#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main() {\n    // Your code here\n    return 0;\n}\n`,
+  },
+  java: {
+    id: 'java',
+    label: 'Java',
+    shortLabel: 'Java',
+    filename: 'Solution.java',
+    template: `// Write your Java solution here\npublic class Solution {\n    public static void main(String[] args) {\n        // Your code here\n    }\n}\n`,
+  },
+};
+
 function CodeEditor() {
-  const [code, setCode] = useState('');
+  const [selectedLang, setSelectedLang] = useState('py');
+  const [code, setCode] = useState(CODE_LANGUAGES.py.template);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const { localParticipant } = useLocalParticipant();
+
+  const handleLangChange = (newLangId) => {
+    setSelectedLang(newLangId);
+    // If editor has not been modified or is a default template, switch to new template
+    const isDefaultTemplate = !code.trim() || Object.values(CODE_LANGUAGES).some((l) => l.template.trim() === code.trim());
+    if (isDefaultTemplate) {
+      setCode(CODE_LANGUAGES[newLangId].template);
+    }
+    setIsSubmitted(false);
+  };
 
   const handleSubmit = async () => {
     if (!code.trim()) return;
     setIsSubmitting(true);
     
     try {
-      const payload = JSON.stringify({ type: 'code_submission', code });
+      const payload = JSON.stringify({
+        type: 'code_submission',
+        code,
+        language: selectedLang,
+      });
       const encoder = new TextEncoder();
       const data = encoder.encode(payload);
       
@@ -318,6 +515,8 @@ function CodeEditor() {
     }
   };
 
+  const currentLangConfig = CODE_LANGUAGES[selectedLang] || CODE_LANGUAGES.py;
+
   return (
     <div style={{ 
       display: 'flex',
@@ -326,24 +525,53 @@ function CodeEditor() {
       background: '#0d1117',
       overflow: 'hidden',
     }}>
-      {/* Terminal Header */}
+      {/* Terminal Header with Multi-Language Selector */}
       <div style={{ 
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'space-between',
-        padding: '0.75rem 1rem', 
+        padding: '0.65rem 1rem', 
         background: '#161b22',
         borderBottom: '1px solid #30363d',
         flexShrink: 0,
+        flexWrap: 'wrap',
+        gap: '0.5rem',
       }}>
-        <div style={{ display: 'flex', gap: '6px' }}>
-          <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ef4444' }}></div>
-          <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#eab308' }}></div>
-          <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#22c55e' }}></div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ef4444' }}></div>
+            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#eab308' }}></div>
+            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#22c55e' }}></div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#8b949e', fontSize: '0.82rem', fontWeight: 500, letterSpacing: '0.5px' }}>
+            <TerminalSquare size={14} />
+            <span>{currentLangConfig.filename}</span>
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#8b949e', fontSize: '0.85rem', fontWeight: 500, letterSpacing: '0.5px' }}>
-          <TerminalSquare size={14} />
-          <span>workspace.py</span>
+
+        {/* Language Selector Dropdown */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+          <span style={{ fontSize: '0.74rem', color: '#8b949e' }}>Language:</span>
+          <select
+            value={selectedLang}
+            onChange={(e) => handleLangChange(e.target.value)}
+            style={{
+              background: '#21262d',
+              border: '1px solid #30363d',
+              color: '#e6edf3',
+              fontSize: '0.78rem',
+              fontWeight: 600,
+              padding: '0.25rem 0.6rem',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              outline: 'none',
+            }}
+          >
+            <option value="py">🐍 Python (3.x)</option>
+            <option value="c">⚙️ C (C11)</option>
+            <option value="cpp">⚡ C++ (17/20)</option>
+            <option value="java">☕ Java</option>
+          </select>
         </div>
       </div>
 
@@ -352,7 +580,7 @@ function CodeEditor() {
         <textarea
           value={code}
           onChange={(e) => { setCode(e.target.value); setIsSubmitted(false); }}
-          placeholder="# Write your solution here..."
+          placeholder={`// Write your ${currentLangConfig.shortLabel} solution here...`}
           spellCheck={false}
           style={{
             width: '100%',
@@ -393,8 +621,8 @@ function CodeEditor() {
         alignItems: 'center',
         flexShrink: 0,
       }}>
-        <span style={{ fontSize: '0.8rem', color: '#484f58' }}>
-          Python 3.x • UTF-8
+        <span style={{ fontSize: '0.8rem', color: '#8b949e' }}>
+          {currentLangConfig.label} • UTF-8
         </span>
         <button 
           onClick={handleSubmit}

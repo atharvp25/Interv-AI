@@ -19,6 +19,14 @@ class AssistantFnc(llm.Toolset):
         self._code_attempts = 0
         self._max_attempts = 3
         self._editor_opened = False  # Track if editor has been opened
+        self.telemetry_tracker = None
+        self.on_conclusion_requested = None  # Callback to coordinate speech playout and graceful closure
+
+    def set_conclusion_callback(self, callback):
+        self.on_conclusion_requested = callback
+
+    def set_telemetry_tracker(self, tracker):
+        self.telemetry_tracker = tracker
 
     async def _send_editor_command(self, command: str):
         """Send a DataChannel message to the frontend to open/close the code editor."""
@@ -27,7 +35,7 @@ class AssistantFnc(llm.Toolset):
                 json.dumps({"type": command}).encode("utf-8")
             )
 
-    @llm.function_tool(description="Open the code editor on the candidate's screen. Call this IMMEDIATELY when you ask a coding question.")
+    @llm.function_tool(description="Open the live code editor on the candidate's screen. You MUST call this tool in the exact same turn when you state the coding challenge problem to the candidate.")
     async def enable_code_editor(self):
         if self.session_meta.get("track") == "bda":
             return "Code editor is disabled for BDA/Sales assessments. Continue with the voice conversation."
@@ -64,8 +72,36 @@ class AssistantFnc(llm.Toolset):
             return "Evaluation was already submitted. Just thank the candidate and say goodbye."
         self._submitted = True
 
-        meta = self.session_meta
+        meta = dict(self.session_meta)
         session_id = meta.get("session_id") or ""
+
+        # Bulletproof recovery: if session_id is missing, extract it from room name "intervai-<session_id>-<hash>"
+        if not session_id and self.room and getattr(self.room, "name", None):
+            room_name = self.room.name
+            if room_name.startswith("intervai-"):
+                parts = room_name.split("-")
+                if len(parts) >= 2 and len(parts[1]) == 24:
+                    session_id = parts[1]
+                    logger.info(f"submit_evaluation: Recovered session_id={session_id} from room.name")
+
+        # Guaranteed DB session lookup to ensure assessor_id, assessment_id, and taker identity are never lost
+        if session_id and ObjectId.is_valid(session_id):
+            session_doc = await db.interview_sessions.find_one({"_id": ObjectId(session_id)})
+            if session_doc:
+                meta["assessment_id"] = session_doc.get("assessment_id") or meta.get("assessment_id")
+                meta["assessor_id"] = session_doc.get("assessor_id") or meta.get("assessor_id")
+                meta["assessor_username"] = session_doc.get("assessor_username") or meta.get("assessor_username")
+                meta["taker_user_id"] = session_doc.get("taker_user_id") or meta.get("taker_user_id")
+                meta["taker_username"] = session_doc.get("taker_username") or meta.get("taker_username")
+                meta["taker_name"] = session_doc.get("taker_name") or meta.get("taker_name")
+                meta["taker_email"] = session_doc.get("taker_email") or meta.get("taker_email")
+                meta["is_practice"] = session_doc.get("is_practice", meta.get("is_practice", False))
+                meta["share_with_taker"] = session_doc.get("share_with_taker", meta.get("share_with_taker", False))
+                meta["role_title"] = session_doc.get("role_title") or meta.get("role_title")
+                meta["track"] = session_doc.get("track") or meta.get("track")
+                meta["language"] = session_doc.get("language") or meta.get("language")
+                meta["jd_file_id"] = session_doc.get("jd_file_id") or meta.get("jd_file_id")
+
         assessment_id = meta.get("assessment_id") or None
         is_practice = bool(meta.get("is_practice", not bool(assessment_id)))
         assessor_id = meta.get("assessor_id") or None
@@ -78,8 +114,8 @@ class AssistantFnc(llm.Toolset):
         jd_file_id = meta.get("jd_file_id") or None
 
         logger.info(
-            f"Submitting evaluation | session={session_id} | is_practice={is_practice} | "
-            f"assessor={assessor_username} | taker={taker_name}"
+            f"Submitting evaluation | session={session_id} | assessment={assessment_id} | "
+            f"is_practice={is_practice} | assessor={assessor_username} ({assessor_id}) | taker={taker_name}"
         )
 
         if not jd_file_id and taker_username:
@@ -124,13 +160,62 @@ class AssistantFnc(llm.Toolset):
             },
             "ai_disclaimer": "AI-generated assistive assessment. Final decision rests with the human reviewer."
         }
+
+        # Attach real-time latency telemetry matrix (STT, LLM, TTS, E2E turnaround)
+        telemetry_data = None
+        if self.telemetry_tracker and hasattr(self.telemetry_tracker, "get_summary"):
+            try:
+                telemetry_data = self.telemetry_tracker.get_summary()
+                evaluation["telemetry"] = telemetry_data
+                logger.info(
+                    f"Saved Latency Telemetry for session {session_id} | "
+                    f"STT: {telemetry_data.get('avg_stt_ms')}ms | "
+                    f"LLM: {telemetry_data.get('avg_llm_ms')}ms | "
+                    f"TTS: {telemetry_data.get('avg_tts_ms')}ms | "
+                    f"E2E: {telemetry_data.get('avg_e2e_ms')}ms | "
+                    f"Turns: {telemetry_data.get('turn_count')}"
+                )
+            except Exception as e:
+                logger.warning(f"Failed to compile latency telemetry: {e}")
+
         await db.evaluations.insert_one(evaluation)
 
         # Mark session as completed in MongoDB
         if session_id and ObjectId.is_valid(session_id):
+            update_payload = {"state": "completed", "completed_at": now_iso}
+            if telemetry_data:
+                update_payload["telemetry"] = telemetry_data
             await db.interview_sessions.update_one(
                 {"_id": ObjectId(session_id)},
-                {"$set": {"state": "completed", "completed_at": now_iso}}
+                {"$set": update_payload}
             )
 
-        return "Evaluation saved successfully. Inform the user that their results have been saved and say goodbye."
+        # Notify the conclusion coordinator to manage audio playout and room closure
+        if self.on_conclusion_requested:
+            import asyncio
+            asyncio.create_task(self.on_conclusion_requested(evaluation_source="tool"))
+        else:
+            # Standalone fallback for testing environments
+            async def _delayed_room_closure():
+                import asyncio
+                await asyncio.sleep(8)
+                try:
+                    await self._send_editor_command("interview_completed")
+                except Exception as e:
+                    logger.warning(f"Failed to publish interview_completed: {e}")
+                await asyncio.sleep(2.5)
+                if self.room:
+                    try:
+                        await self.room.disconnect()
+                    except Exception as e:
+                        logger.warning(f"Error during room disconnect: {e}")
+
+            import asyncio
+            asyncio.create_task(_delayed_room_closure())
+
+        return (
+            "Evaluation saved successfully. Conclude immediately by saying: "
+            "'Aapka interview complete ho chuka hai aur report successfully submit ho gayi hai. Thank you, and all the best!' "
+            "Do not ask any more questions. The room will close automatically after your speech finishes."
+        )
+
