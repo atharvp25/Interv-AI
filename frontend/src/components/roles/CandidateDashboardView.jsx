@@ -4,6 +4,7 @@ import {
   Briefcase, Award, Calendar, Download, Trash2, Link2, ArrowRight,
   TrendingUp, CheckCircle2, ShieldCheck, UserCheck
 } from 'lucide-react';
+import LatencyTelemetryMatrix from '../LatencyTelemetryMatrix';
 
 export default function CandidateDashboardView({
   user,
@@ -126,7 +127,7 @@ export default function CandidateDashboardView({
         ) : (
           <div style={{ display: 'grid', gap: '1.25rem' }}>
             {practiceEvals.map((ev, i) => (
-              <CandidateCard key={ev._id || i} ev={ev} token={token} formatDate={formatDate} getBaseUrl={getBaseUrl} onDelete={onDeletePractice} isPractice />
+              <CandidateCard key={ev._id || i} ev={ev} token={token} formatDate={formatDate} getBaseUrl={getBaseUrl} onDelete={onDeletePractice} isPractice isSuperAdmin={Boolean(user?.is_super_admin)} />
             ))}
           </div>
         )
@@ -145,7 +146,7 @@ export default function CandidateDashboardView({
         ) : (
           <div style={{ display: 'grid', gap: '1.25rem' }}>
             {releasedEvals.map((ev, i) => (
-              <CandidateCard key={ev._id || i} ev={ev} token={token} formatDate={formatDate} getBaseUrl={getBaseUrl} />
+              <CandidateCard key={ev._id || i} ev={ev} token={token} formatDate={formatDate} getBaseUrl={getBaseUrl} isSuperAdmin={Boolean(user?.is_super_admin)} />
             ))}
           </div>
         )
@@ -154,7 +155,7 @@ export default function CandidateDashboardView({
   );
 }
 
-function CandidateCard({ ev, token, formatDate, getBaseUrl, onDelete, isPractice = false }) {
+function CandidateCard({ ev, token, formatDate, getBaseUrl, onDelete, isPractice = false, isSuperAdmin = false }) {
   return (
     <div className="panel fade-in" style={{ padding: '1.4rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.85rem' }}>
@@ -223,6 +224,9 @@ function CandidateCard({ ev, token, formatDate, getBaseUrl, onDelete, isPractice
           </div>
         </div>
       )}
+
+      {/* Super Admin Real-Time Latency Telemetry Matrix */}
+      <LatencyTelemetryMatrix telemetry={ev.telemetry} isSuperAdmin={isSuperAdmin} />
     </div>
   );
 }

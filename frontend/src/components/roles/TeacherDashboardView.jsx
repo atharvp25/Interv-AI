@@ -4,6 +4,7 @@ import {
   Plus, Users, Link2, Award, Calendar, FileText, Download, Copy,
   Ban, CheckCircle2, ShieldCheck, GraduationCap, Code2, Sparkles, BookOpen
 } from 'lucide-react';
+import LatencyTelemetryMatrix from '../LatencyTelemetryMatrix';
 
 export default function TeacherDashboardView({
   user,
@@ -121,7 +122,7 @@ export default function TeacherDashboardView({
         ) : (
           <div style={{ display: 'grid', gap: '1.25rem' }}>
             {assignedEvals.map((ev, i) => (
-              <VivaReportCard key={ev._id || i} ev={ev} token={token} formatDate={formatDate} getBaseUrl={getBaseUrl} />
+              <VivaReportCard key={ev._id || i} ev={ev} token={token} formatDate={formatDate} getBaseUrl={getBaseUrl} isSuperAdmin={Boolean(user?.is_super_admin)} />
             ))}
           </div>
         )
@@ -219,7 +220,7 @@ export default function TeacherDashboardView({
         ) : (
           <div style={{ display: 'grid', gap: '1.25rem' }}>
             {practiceEvals.map((ev, i) => (
-              <VivaReportCard key={ev._id || i} ev={ev} token={token} formatDate={formatDate} getBaseUrl={getBaseUrl} onDelete={onDeletePractice} isPractice />
+              <VivaReportCard key={ev._id || i} ev={ev} token={token} formatDate={formatDate} getBaseUrl={getBaseUrl} onDelete={onDeletePractice} isPractice isSuperAdmin={Boolean(user?.is_super_admin)} />
             ))}
           </div>
         )
@@ -228,7 +229,7 @@ export default function TeacherDashboardView({
   );
 }
 
-function VivaReportCard({ ev, token, formatDate, getBaseUrl, onDelete, isPractice = false }) {
+function VivaReportCard({ ev, token, formatDate, getBaseUrl, onDelete, isPractice = false, isSuperAdmin = false }) {
   return (
     <div className="panel fade-in" style={{ padding: '1.4rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.85rem' }}>
@@ -303,6 +304,9 @@ function VivaReportCard({ ev, token, formatDate, getBaseUrl, onDelete, isPractic
           </div>
         </div>
       )}
+
+      {/* Super Admin Real-Time Latency Telemetry Matrix */}
+      <LatencyTelemetryMatrix telemetry={ev.telemetry} isSuperAdmin={isSuperAdmin} />
     </div>
   );
 }
