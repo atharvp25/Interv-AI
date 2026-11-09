@@ -1,33 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import { Clock, Calendar, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react'
+import { Clock, Calendar } from 'lucide-react'
 
 export default function LinkExpiryPicker({ totalHours, onChangeHours }) {
-  const [mode, setMode] = useState('preset'); // 'preset' | 'custom'
-  const [customValue, setCustomValue] = useState(48);
-  const [customUnit, setCustomUnit] = useState('hours'); // 'hours' | 'days'
+  const [mode, setMode] = useState('preset') // 'preset' | 'custom'
+  const [customValue, setCustomValue] = useState(48)
+  const [customUnit, setCustomUnit] = useState('hours') // 'hours' | 'days'
 
   const PRESETS = [
-    { label: '24 Hours', hours: 24 },
-    { label: '3 Days', hours: 72 },
-    { label: '7 Days', hours: 168 },
-    { label: '14 Days', hours: 336 },
-  ];
+    { label: '24 hours', hours: 24 },
+    { label: '3 days', hours: 72 },
+    { label: '7 days', hours: 168 },
+    { label: '14 days', hours: 336 },
+  ]
 
   useEffect(() => {
     if (mode === 'custom') {
-      const calculatedHours = customUnit === 'days' ? customValue * 24 : customValue;
-      onChangeHours(Math.max(1, calculatedHours));
+      const calculatedHours = customUnit === 'days' ? customValue * 24 : customValue
+      onChangeHours(Math.max(1, calculatedHours))
     }
-  }, [customValue, customUnit, mode]);
+  }, [customValue, customUnit, mode])
 
   const handleSelectPreset = (hours) => {
-    setMode('preset');
-    onChangeHours(hours);
-  };
+    setMode('preset')
+    onChangeHours(hours)
+  }
 
   const computeExpiryDate = () => {
-    const d = new Date();
-    d.setHours(d.getHours() + (totalHours || 24));
+    const d = new Date()
+    d.setHours(d.getHours() + (totalHours || 24))
     return d.toLocaleString('en-US', {
       weekday: 'short',
       month: 'short',
@@ -35,101 +35,80 @@ export default function LinkExpiryPicker({ totalHours, onChangeHours }) {
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-    });
-  };
+    })
+  }
 
   return (
-    <div style={{ background: 'var(--bg-main)', padding: '1.1rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-        <label style={{ fontSize: '0.88rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
-          <Clock size={15} color="var(--primary)" /> Customizable Link Expiry Window
+    <div style={{ backgroundColor: 'var(--bg)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+        <label style={{ fontSize: 'var(--text-sm)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+          <Clock size={16} strokeWidth={1.5} color="var(--text-secondary)" /> Link expiration window
         </label>
-        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-          Active for: <strong>{totalHours >= 24 && totalHours % 24 === 0 ? `${totalHours / 24} Day(s)` : `${totalHours} Hour(s)`}</strong>
+        <span className="mono-font" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+          Duration: {totalHours >= 24 && totalHours % 24 === 0 ? `${totalHours / 24}d` : `${totalHours}h`}
         </span>
       </div>
 
-      {/* Preset Pills + Custom Toggle */}
-      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.9rem' }}>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
         {PRESETS.map((p) => {
-          const isSelected = mode === 'preset' && totalHours === p.hours;
+          const isSelected = mode === 'preset' && totalHours === p.hours
           return (
             <button
               key={p.hours}
               type="button"
               onClick={() => handleSelectPreset(p.hours)}
+              className="pn-btn-sm"
               style={{
-                padding: '0.4rem 0.85rem',
-                borderRadius: '8px',
-                fontSize: '0.82rem',
-                fontWeight: 600,
-                border: `1px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}`,
-                background: isSelected ? 'var(--primary)' : 'var(--bg-surface)',
-                color: isSelected ? '#fff' : 'var(--text-main)',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
+                border: `1px solid ${isSelected ? 'var(--accent)' : 'var(--border-strong)'}`,
+                backgroundColor: isSelected ? 'var(--accent-soft)' : 'var(--surface)',
+                color: isSelected ? 'var(--accent-text)' : 'var(--text)',
+                fontWeight: isSelected ? 600 : 500,
               }}
             >
               {p.label}
             </button>
-          );
+          )
         })}
         <button
           type="button"
           onClick={() => {
-            setMode('custom');
-            const h = customUnit === 'days' ? customValue * 24 : customValue;
-            onChangeHours(h);
+            setMode('custom')
+            const h = customUnit === 'days' ? customValue * 24 : customValue
+            onChangeHours(h)
           }}
+          className="pn-btn-sm"
           style={{
-            padding: '0.4rem 0.85rem',
-            borderRadius: '8px',
-            fontSize: '0.82rem',
-            fontWeight: 600,
-            border: `1px solid ${mode === 'custom' ? 'var(--primary)' : 'var(--border)'}`,
-            background: mode === 'custom' ? 'var(--primary)' : 'var(--bg-surface)',
-            color: mode === 'custom' ? '#fff' : 'var(--text-main)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.3rem',
+            border: `1px solid ${mode === 'custom' ? 'var(--accent)' : 'var(--border-strong)'}`,
+            backgroundColor: mode === 'custom' ? 'var(--accent-soft)' : 'var(--surface)',
+            color: mode === 'custom' ? 'var(--accent-text)' : 'var(--text)',
+            fontWeight: mode === 'custom' ? 600 : 500,
           }}
         >
-          <Sparkles size={13} /> Custom Duration
+          Custom duration
         </button>
       </div>
 
-      {/* Custom Duration Inputs (When Custom mode is active) */}
       {mode === 'custom' && (
-        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px', maxWidth: '320px' }}>
           <input
             type="number"
-            min={1}
-            max={720}
+            min="1"
+            max="720"
             value={customValue}
-            onChange={(e) => setCustomValue(Math.max(1, parseInt(e.target.value) || 1))}
-            style={{ width: '110px', padding: '0.5rem 0.75rem', fontSize: '0.9rem', borderRadius: '8px', background: 'var(--bg-surface)' }}
+            onChange={(e) => setCustomValue(Math.max(1, Number(e.target.value)))}
+            style={{ width: '100px' }}
           />
-          <select
-            value={customUnit}
-            onChange={(e) => setCustomUnit(e.target.value)}
-            style={{ padding: '0.55rem 0.85rem', fontSize: '0.85rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-surface)' }}
-          >
+          <select value={customUnit} onChange={(e) => setCustomUnit(e.target.value)} style={{ width: '120px' }}>
             <option value="hours">Hours</option>
             <option value="days">Days</option>
           </select>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            (Type any value e.g. 36 hours, 5 days, 10 days)
-          </span>
         </div>
       )}
 
-      {/* Live Calculated Expiry Banner */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.78rem', color: 'var(--text-muted)', background: 'rgba(37, 99, 235, 0.05)', padding: '0.4rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(37, 99, 235, 0.15)' }}>
-        <Calendar size={13} color="var(--primary)" />
-        <span>Link expires on: <strong>{computeExpiryDate()}</strong></span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+        <Calendar size={14} strokeWidth={1.5} />
+        <span>Valid until {computeExpiryDate()}</span>
       </div>
     </div>
-  );
+  )
 }
-
