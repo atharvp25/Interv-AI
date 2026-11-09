@@ -21,7 +21,7 @@ CURATED_BDA_KEYWORDS = [
 ]
 
 DEFAULT_TECH_JD = """
-Role: Python & AI Engineer
+Role: Technical Software Engineer (SDE)
 Requirements:
 - Strong proficiency in Python, FastAPI, and RESTful API architecture.
 - Hands-on experience with SQL, PostgreSQL, or MongoDB.
@@ -134,7 +134,7 @@ async def get_interview_session_context(
 
     return {
         "session_id": "",
-        "role_title": "Python & AI Engineer" if is_tech else "Enterprise BDA & Sales",
+        "role_title": "Technical Software Engineer (SDE) Screening" if is_tech else "Enterprise BDA Sales & Pitch Screening",
         "track": "tech" if is_tech else "bda",
         "language": language,
         "jd_text": default_text.strip(),

@@ -140,8 +140,9 @@ async def create_assessment(
 
 @router.get("/assessments")
 async def list_my_assessments(current_user: dict = Depends(require_assessor)):
-    """List only assessments owned by the authenticated Recruiter/Teacher."""
-    cursor = db.assessments.find({"owner_id": current_user["id"]}).sort("created_at", -1)
+    """List assessments owned by the authenticated Recruiter/Teacher (or all for Super Admin)."""
+    query = {} if (current_user.get("is_super_admin") and current_user.get("role") == "super_admin") else {"owner_id": current_user["id"]}
+    cursor = db.assessments.find(query).sort("created_at", -1)
     items = await cursor.to_list(length=100)
     results = []
     for item in items:
@@ -173,10 +174,11 @@ async def get_assessment_by_id(
     if not ObjectId.is_valid(assessment_id):
         raise HTTPException(status_code=404, detail="Assessment not found")
 
-    doc = await db.assessments.find_one({
-        "_id": ObjectId(assessment_id),
-        "owner_id": current_user["id"],
-    })
+    query = {"_id": ObjectId(assessment_id)}
+    if not (current_user.get("is_super_admin") and current_user.get("role") == "super_admin"):
+        query["owner_id"] = current_user["id"]
+
+    doc = await db.assessments.find_one(query)
     if not doc:
         raise HTTPException(status_code=404, detail="Assessment not found")
 
@@ -574,6 +576,7 @@ async def get_token(
         api.AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET)
         .with_identity(server_identity)
         .with_name(session_doc.get("taker_name", taker_username))
+        .with_metadata(dispatch_metadata)
         .with_ttl(datetime.timedelta(minutes=30))
         .with_grants(
             api.VideoGrants(
@@ -612,6 +615,9 @@ async def get_token(
 
 def _can_user_view_report(ev: dict, current_user: dict) -> bool:
     """Object-level authorization check for viewing a single evaluation report."""
+    if current_user.get("is_super_admin"):
+        return True
+
     user_id = current_user["id"]
     username = current_user["username"]
     is_practice = ev.get("is_practice", ev.get("assessment_id") is None)
@@ -668,6 +674,9 @@ async def get_evaluations(
         mongo_query = practice_query
     else:
         mongo_query = {"$or": [assigned_query, practice_query]}
+
+    if current_user.get("is_super_admin") and role == "super_admin":
+        mongo_query = {"assessment_id": assessment_id} if assessment_id else {}
 
     cursor = db.evaluations.find(mongo_query).sort("timestamp", -1)
     evaluations = await cursor.to_list(length=100)
