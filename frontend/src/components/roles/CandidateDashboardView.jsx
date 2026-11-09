@@ -51,7 +51,7 @@ export default function CandidateDashboardView({
             Candidate interview workspace
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: 0 }}>
-            Practice handling realistic sales objections or technical assessments before live company interviews.
+            Practice handling realistic clinical scenarios, legal arguments, sales objection role-plays, or technical interviews.
           </p>
         </div>
 
@@ -128,7 +128,7 @@ export default function CandidateDashboardView({
         practiceEvals.length === 0 ? (
           <EmptyState
             title="No practice sessions yet"
-            description="Run a mock interview in English, Hindi, or Marathi to receive a structured 6-axis scorecard."
+            description="Run a mock interview in English, Hindi, or any regional language to receive a structured 6-axis scorecard."
             actionLabel="Start practice interview"
             onAction={() => navigate('/setup')}
           />

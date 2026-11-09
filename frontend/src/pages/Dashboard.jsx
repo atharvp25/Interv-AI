@@ -20,14 +20,70 @@ import { SkeletonCard } from '../components/ui/Skeleton'
 const GUEST_SAMPLE_EVALUATIONS = {
   teacher: [
     {
-      _id: 'sample_eval_teacher_1',
-      role_title: 'CS301 Python Data Structures & Viva — Batch A',
+      _id: 'sample_eval_teacher_med',
+      role_title: 'MBBS Clinical Medicine & Pharmacology Oral Viva',
+      taker_name: 'Dr. Ananya Sen',
+      taker_email: 'ananya.s@med.college.edu',
+      track: 'bda',
+      language: 'hinglish',
+      is_practice: false,
+      timestamp: new Date().toISOString(),
+      scores: {
+        technical_accuracy: 9,
+        communication: 9,
+        confidence: 8,
+        depth: 9,
+        completeness: 9,
+        overall_score: 8.8,
+      },
+      feedback: {
+        strengths: [
+          'Accurate differential diagnosis of acute coronary syndrome vs pulmonary embolism',
+          'Clear oral justification of emergency dual antiplatelet dosage and contraindications in Hinglish',
+        ],
+        areas_for_improvement: [
+          'State cardiac troponin test turnaround time benchmarks explicitly',
+        ],
+        summary: 'Exemplary clinical reasoning and composed diagnostic defense under professor inquiry.',
+      },
+    },
+    {
+      _id: 'sample_eval_teacher_law',
+      role_title: 'Constitutional Law & Moot Court Oral Defense',
+      taker_name: 'Kabir Mehta',
+      taker_email: 'kabir.m@law.college.edu',
+      track: 'bda',
+      language: 'en-IN',
+      is_practice: false,
+      timestamp: new Date(Date.now() - 3600000 * 3).toISOString(),
+      scores: {
+        technical_accuracy: 8,
+        communication: 9,
+        confidence: 9,
+        depth: 8,
+        completeness: 8,
+        overall_score: 8.4,
+      },
+      feedback: {
+        strengths: [
+          'Authoritative citation of landmark Supreme Court precedents on Article 21 and proportionality',
+          'Maintained professional courtroom decorum under rapid judicial questioning',
+        ],
+        areas_for_improvement: [
+          'Address counter-arguments regarding jurisdictional locus standi earlier',
+        ],
+        summary: 'Persuasive oral advocacy with strong grasp of constitutional jurisprudence.',
+      },
+    },
+    {
+      _id: 'sample_eval_teacher_cs',
+      role_title: 'CS301 Python Data Structures Practical Viva',
       taker_name: 'Aarav Kulkarni',
       taker_email: 'aarav.k@college.edu',
       track: 'tech',
       language: 'hinglish',
       is_practice: false,
-      timestamp: new Date().toISOString(),
+      timestamp: new Date(Date.now() - 3600000 * 6).toISOString(),
       scores: {
         technical_accuracy: 9,
         communication: 8,
@@ -44,42 +100,14 @@ const GUEST_SAMPLE_EVALUATIONS = {
         areas_for_improvement: [
           'Could discuss edge-case handling for empty arrays earlier',
         ],
-        summary: 'Student demonstrated strong alignment between their submitted Python code and oral viva defense.',
+        summary: 'Student demonstrated strong alignment between submitted code and oral viva defense.',
       },
     },
     {
-      _id: 'sample_eval_teacher_3',
-      role_title: 'CS301 Python Data Structures & Viva — Batch A',
-      taker_name: 'Rohan Deshmukh',
-      taker_email: 'rohan.d@college.edu',
-      track: 'tech',
-      language: 'mr-IN',
-      is_practice: false,
-      timestamp: new Date(Date.now() - 3600000 * 5).toISOString(),
-      scores: {
-        technical_accuracy: 7,
-        communication: 8,
-        confidence: 7,
-        depth: 7,
-        completeness: 7,
-        overall_score: 7.2,
-      },
-      feedback: {
-        strengths: [
-          'Correct iterative binary search implementation',
-          'Clear explanation of pointer bounds in Marathi',
-        ],
-        areas_for_improvement: [
-          'Missed integer overflow consideration on mid calculation',
-        ],
-        summary: 'Solid foundational grasp of searching algorithms and loop invariants.',
-      },
-    },
-    {
-      _id: 'sample_eval_teacher_2',
-      role_title: 'Python & Data Structures Faculty Calibration Run',
+      _id: 'sample_eval_teacher_calib',
+      role_title: 'Multi-Discipline Oral Viva Calibration Run',
       taker_name: 'Faculty Calibration',
-      track: 'tech',
+      track: 'bda',
       language: 'hinglish',
       is_practice: true,
       timestamp: new Date(Date.now() - 86400000).toISOString(),
@@ -92,22 +120,78 @@ const GUEST_SAMPLE_EVALUATIONS = {
         overall_score: 9.4,
       },
       feedback: {
-        strengths: ['Verified edge cases and recursion depth limits'],
+        strengths: ['Verified viva question rubric and audio transcript precision across disciplines'],
         areas_for_improvement: ['None noted — benchmark calibration run'],
-        summary: 'Faculty verification run of the live code editor and oral defense rubric.',
+        summary: 'Faculty verification of the oral defense rubric and grading criteria.',
       },
     },
   ],
   recruiter: [
     {
-      _id: 'sample_eval_recruiter_1',
+      _id: 'sample_eval_recruiter_med',
+      role_title: 'Clinical Healthcare Specialist Screening',
+      taker_name: 'Dr. Siddharth Rao',
+      taker_email: 'siddharth.r@hospital.org',
+      track: 'bda',
+      language: 'hi-IN',
+      is_practice: false,
+      timestamp: new Date().toISOString(),
+      scores: {
+        technical_accuracy: 9,
+        communication: 9,
+        confidence: 8,
+        depth: 9,
+        completeness: 8,
+        overall_score: 8.6,
+      },
+      feedback: {
+        strengths: [
+          'Systematic clinical history taking and triage protocol explanation in Hindi',
+          'Excellent patient communication and high empathy under crisis scenarios',
+        ],
+        areas_for_improvement: [
+          'Elaborate on multi-department escalation workflows',
+        ],
+        summary: 'Strong clinical composure, excellent communication, and thorough patient triage protocol.',
+      },
+    },
+    {
+      _id: 'sample_eval_recruiter_law',
+      role_title: 'Corporate Legal Counsel & Compliance Screening',
+      taker_name: 'Meera Nambiar',
+      taker_email: 'meera.n@corp.law',
+      track: 'bda',
+      language: 'en-IN',
+      is_practice: false,
+      timestamp: new Date(Date.now() - 3600000 * 4).toISOString(),
+      scores: {
+        technical_accuracy: 9,
+        communication: 8,
+        confidence: 9,
+        depth: 8,
+        completeness: 8,
+        overall_score: 8.4,
+      },
+      feedback: {
+        strengths: [
+          'Crisp verbal analysis of commercial contract indemnities and limitation of liability clauses',
+          'Demonstrated thorough knowledge of statutory data protection provisions',
+        ],
+        areas_for_improvement: [
+          'Clarify arbitration jurisdiction nuances for cross-border contracts',
+        ],
+        summary: 'Clear stakeholder advisory and sharp commercial contract risk mitigation.',
+      },
+    },
+    {
+      _id: 'sample_eval_recruiter_sales',
       role_title: 'Enterprise BDA & SaaS Sales Screening',
       taker_name: 'Priya Deshmukh',
       taker_email: 'priya.d@example.com',
       track: 'bda',
       language: 'hinglish',
       is_practice: false,
-      timestamp: new Date().toISOString(),
+      timestamp: new Date(Date.now() - 3600000 * 7).toISOString(),
       scores: {
         technical_accuracy: 8,
         communication: 9,
@@ -128,65 +212,96 @@ const GUEST_SAMPLE_EVALUATIONS = {
       },
     },
     {
-      _id: 'sample_eval_recruiter_3',
+      _id: 'sample_eval_recruiter_tech',
       role_title: 'Backend Software Engineer (SDE-1) Screening',
       taker_name: 'Vikram Nair',
       taker_email: 'vikram.n@example.com',
       track: 'tech',
       language: 'en-IN',
       is_practice: false,
-      timestamp: new Date(Date.now() - 3600000 * 8).toISOString(),
+      timestamp: new Date(Date.now() - 3600000 * 10).toISOString(),
       scores: {
-        technical_accuracy: 6,
-        communication: 7,
+        technical_accuracy: 7,
+        communication: 8,
         confidence: 7,
-        depth: 6,
-        completeness: 6,
-        overall_score: 6.4,
+        depth: 7,
+        completeness: 7,
+        overall_score: 7.2,
       },
       feedback: {
         strengths: [
-          'Clear verbal walkthrough of REST API pagination',
+          'Clear verbal walkthrough of REST API pagination and data schemas',
         ],
         areas_for_improvement: [
-          'Sub-optimal O(n²) nested loop in code editor submission',
-          'Needs stronger familiarity with database indexing',
+          'Sub-optimal nested loop in initial submission before hints',
         ],
-        summary: 'Communicates clearly but requires deeper algorithmic optimization for SDE-1.',
-      },
-    },
-    {
-      _id: 'sample_eval_recruiter_2',
-      role_title: 'BDA Voice Screening Calibration Run',
-      taker_name: 'Recruiter Calibration',
-      track: 'bda',
-      language: 'hinglish',
-      is_practice: true,
-      timestamp: new Date(Date.now() - 86400000).toISOString(),
-      scores: {
-        technical_accuracy: 9,
-        communication: 9,
-        confidence: 9,
-        depth: 9,
-        completeness: 9,
-        overall_score: 9.0,
-      },
-      feedback: {
-        strengths: ['Smooth conversational pacing and structured discovery'],
-        areas_for_improvement: ['Pace closing questions slightly more evenly'],
-        summary: 'Recruiter calibration session validated objection triggers.',
+        summary: 'Communicates clearly and responds well to algorithmic hints.',
       },
     },
   ],
   student: [
     {
-      _id: 'sample_eval_student_1',
-      role_title: 'Python & Algorithms Lab Practice Viva',
+      _id: 'sample_eval_student_med',
+      role_title: 'Clinical Diagnostics & Pharmacology Viva Prep',
+      taker_name: 'Student Practice',
+      track: 'bda',
+      language: 'hinglish',
+      is_practice: true,
+      timestamp: new Date().toISOString(),
+      scores: {
+        technical_accuracy: 8,
+        communication: 9,
+        confidence: 8,
+        depth: 8,
+        completeness: 8,
+        overall_score: 8.2,
+      },
+      feedback: {
+        strengths: [
+          'Articulated differential diagnosis for acute respiratory distress fluently in Hinglish',
+          'Demonstrated safe antibiotic selection rationale',
+        ],
+        areas_for_improvement: [
+          'Review dosage adjustment calculations for renal impairment',
+        ],
+        summary: 'Composed clinical practice run with strong verbal reasoning.',
+      },
+    },
+    {
+      _id: 'sample_eval_student_law',
+      role_title: 'Moot Court Advocacy & Case Law Practice',
+      taker_name: 'Student Practice',
+      track: 'bda',
+      language: 'en-IN',
+      is_practice: true,
+      timestamp: new Date(Date.now() - 3600000 * 4).toISOString(),
+      scores: {
+        technical_accuracy: 8,
+        communication: 8,
+        confidence: 8,
+        depth: 8,
+        completeness: 8,
+        overall_score: 8.0,
+      },
+      feedback: {
+        strengths: [
+          'Framed jurisdictional propositions clearly within allotted time',
+          'Cited landmark precedents accurately without hesitation',
+        ],
+        areas_for_improvement: [
+          'Prepare stronger rebuttal on balancing tests',
+        ],
+        summary: 'Solid moot court rehearsal. Ready for inter-university rounds.',
+      },
+    },
+    {
+      _id: 'sample_eval_student_tech',
+      role_title: 'Python Data Structures & Complexity Viva Practice',
       taker_name: 'Student Practice',
       track: 'tech',
       language: 'hinglish',
       is_practice: true,
-      timestamp: new Date().toISOString(),
+      timestamp: new Date(Date.now() - 86400000).toISOString(),
       scores: {
         technical_accuracy: 8,
         communication: 8,
@@ -206,39 +321,43 @@ const GUEST_SAMPLE_EVALUATIONS = {
         summary: 'Solid viva practice run. Ready for upcoming lab examination.',
       },
     },
-    {
-      _id: 'sample_eval_student_2',
-      role_title: 'CS301 Mid-Semester Oral Viva (Released by Professor)',
-      taker_name: 'Student Preview',
-      track: 'tech',
-      language: 'hinglish',
-      is_practice: false,
-      share_with_taker: true,
-      timestamp: new Date(Date.now() - 172800000).toISOString(),
-      scores: {
-        technical_accuracy: 9,
-        communication: 8,
-        confidence: 8,
-        depth: 9,
-        completeness: 9,
-        overall_score: 8.6,
-      },
-      feedback: {
-        strengths: ['Thorough explanation of AVL tree rotations and balance factors'],
-        areas_for_improvement: ['Review amortized analysis of dynamic arrays'],
-        summary: 'Strong performance on mid-semester viva.',
-      },
-    },
   ],
   candidate: [
     {
-      _id: 'sample_eval_cand_1',
-      role_title: 'BDA Sales Pitch & Price Objection Practice',
+      _id: 'sample_eval_cand_med',
+      role_title: 'Clinical Specialist & Medical Officer Practice',
       taker_name: 'Candidate Practice',
       track: 'bda',
       language: 'hinglish',
       is_practice: true,
       timestamp: new Date().toISOString(),
+      scores: {
+        technical_accuracy: 9,
+        communication: 9,
+        confidence: 8,
+        depth: 8,
+        completeness: 8,
+        overall_score: 8.4,
+      },
+      feedback: {
+        strengths: [
+          'Structured patient triage communication with high empathy',
+          'Clear explanation of hospital safety protocols and emergency triage steps',
+        ],
+        areas_for_improvement: [
+          'Address inter-disciplinary handover procedures earlier',
+        ],
+        summary: 'Strong clinical communication and composed diagnostic reasoning.',
+      },
+    },
+    {
+      _id: 'sample_eval_cand_sales',
+      role_title: 'BDA Sales Pitch & Price Objection Practice',
+      taker_name: 'Candidate Practice',
+      track: 'bda',
+      language: 'hinglish',
+      is_practice: true,
+      timestamp: new Date(Date.now() - 3600000 * 5).toISOString(),
       scores: {
         technical_accuracy: 9,
         communication: 9,
@@ -255,18 +374,17 @@ const GUEST_SAMPLE_EVALUATIONS = {
         areas_for_improvement: [
           'Address enterprise SLA and compliance terms earlier in the conversation',
         ],
-        summary: 'Strong BDA mock interview performance.',
+        summary: 'Strong consultative sales pitch performance.',
       },
     },
     {
-      _id: 'sample_eval_cand_2',
-      role_title: 'Fintech SDE-1 Technical Screening (Shared by HR)',
-      taker_name: 'Candidate Preview',
+      _id: 'sample_eval_cand_tech',
+      role_title: 'Software Engineer (SDE-1) Practice Screening',
+      taker_name: 'Candidate Practice',
       track: 'tech',
       language: 'en-IN',
-      is_practice: false,
-      share_with_taker: true,
-      timestamp: new Date(Date.now() - 172800000).toISOString(),
+      is_practice: true,
+      timestamp: new Date(Date.now() - 86400000).toISOString(),
       scores: {
         technical_accuracy: 9,
         communication: 8,
@@ -276,9 +394,14 @@ const GUEST_SAMPLE_EVALUATIONS = {
         overall_score: 8.6,
       },
       feedback: {
-        strengths: ['Clean LRU Cache implementation with O(1) operations', 'Clear time-space breakdown'],
-        areas_for_improvement: ['Discuss lock contention in multi-threaded environments'],
-        summary: 'Recruiter shared your technical screening scorecard.',
+        strengths: [
+          'Clean LRU Cache implementation with O(1) operations',
+          'Clear time-space complexity breakdown',
+        ],
+        areas_for_improvement: [
+          'Discuss lock contention in multi-threaded environments',
+        ],
+        summary: 'Solid technical interview practice with strong algorithmic defense.',
       },
     },
   ],
@@ -335,30 +458,63 @@ export default function Dashboard() {
       setEvaluations(sampleList)
       setAssessments(
         isAssessor
-          ? [
-              {
-                assessment_id: 'sample_assess_1',
-                role_title:
-                  effectiveRole === 'teacher'
-                    ? 'CS301 Python Data Structures Viva — Batch A'
-                    : 'Enterprise BDA Sales Role-Play Screening',
-                track: effectiveRole === 'teacher' ? 'tech' : 'bda',
-                language: 'hinglish',
-                share_token:
-                  effectiveRole === 'teacher'
-                    ? 'sample_viva_cs301_demo'
-                    : 'sample_bda_hiring_demo',
-                max_attempts: 1,
-                attempts_used: 1,
-                claimed_by_email:
-                  effectiveRole === 'teacher'
-                    ? 'aarav.k@college.edu'
-                    : 'priya.d@example.com',
-                share_with_taker: effectiveRole === 'teacher',
-                status: 'active',
-                keywords_count: 24,
-              },
-            ]
+          ? effectiveRole === 'teacher'
+            ? [
+                {
+                  assessment_id: 'sample_assess_med_1',
+                  role_title: 'MBBS Clinical Medicine & Pharmacology Viva — Final Prof',
+                  track: 'bda',
+                  language: 'hinglish',
+                  share_token: 'sample_viva_mbbs_demo',
+                  max_attempts: 1,
+                  attempts_used: 1,
+                  claimed_by_email: 'ananya.s@med.college.edu',
+                  share_with_taker: true,
+                  status: 'active',
+                  keywords_count: 28,
+                },
+                {
+                  assessment_id: 'sample_assess_cs_2',
+                  role_title: 'CS301 Python Data Structures Viva — Batch A',
+                  track: 'tech',
+                  language: 'hinglish',
+                  share_token: 'sample_viva_cs301_demo',
+                  max_attempts: 1,
+                  attempts_used: 1,
+                  claimed_by_email: 'aarav.k@college.edu',
+                  share_with_taker: true,
+                  status: 'active',
+                  keywords_count: 24,
+                },
+              ]
+            : [
+                {
+                  assessment_id: 'sample_assess_health_1',
+                  role_title: 'Clinical Healthcare Specialist Screening',
+                  track: 'bda',
+                  language: 'hi-IN',
+                  share_token: 'sample_health_hiring_demo',
+                  max_attempts: 1,
+                  attempts_used: 1,
+                  claimed_by_email: 'siddharth.r@hospital.org',
+                  share_with_taker: false,
+                  status: 'active',
+                  keywords_count: 32,
+                },
+                {
+                  assessment_id: 'sample_assess_bda_2',
+                  role_title: 'Enterprise BDA Sales Role-Play Screening',
+                  track: 'bda',
+                  language: 'hinglish',
+                  share_token: 'sample_bda_hiring_demo',
+                  max_attempts: 1,
+                  attempts_used: 1,
+                  claimed_by_email: 'priya.d@example.com',
+                  share_with_taker: false,
+                  status: 'active',
+                  keywords_count: 26,
+                },
+              ]
           : []
       )
       setLoading(false)

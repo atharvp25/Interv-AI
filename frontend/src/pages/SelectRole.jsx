@@ -20,36 +20,36 @@ const HIRING_ROLES = [
   {
     id: 'recruiter',
     track: 'hiring',
-    category: 'Hiring Assessor',
+    category: 'Enterprise Talent Acquisition',
     title: 'Recruiter / Hiring Manager',
-    tagline: 'Screen candidates in 11 Indian & code-mixed languages',
+    tagline: 'Screen candidates across all domains (tech, sales, healthcare, legal & finance)',
     icon: Briefcase,
-    desc: 'Deploy high-throughput first-round voice screenings for software engineering and BDA sales candidates with instant JD keyterm boosting and realistic enterprise objection handling.',
+    desc: 'Deploy structured first-round voice screenings for any job role — engineering, BDA sales, clinical healthcare, legal associates, or corporate operations — in 11 Indian languages with automatic JD keyterm boosting and realistic situational role-plays.',
     capabilities: [
-      'Code-mixed Hinglish & regional Indic ASR via Gnani Prisma',
+      '11 Indian & code-mixed languages via Gnani Prisma ASR',
+      'Automatic JD keyterm boosting for any profession or domain',
       'Candidate comparison matrix with sortable benchmarked scores',
-      'Single-claimer tokenized links with custom expiry windows',
     ],
-    audience: 'Talent acquisition teams, HR leaders & staffing firms',
+    audience: 'Talent acquisition teams, HR leaders, clinical recruiters & corporate hiring managers',
     orgLabel: 'Company or Organization name',
-    orgPlaceholder: 'e.g. Acme Technologies India',
+    orgPlaceholder: 'e.g. Enterprise Technologies India or Apollo Hospitals',
   },
   {
     id: 'candidate',
     track: 'hiring',
-    category: 'Hiring Candidate',
+    category: 'Career & Interview Preparation',
     title: 'Job Candidate',
-    tagline: 'Complete company screenings & mock interviews',
+    tagline: 'Complete company screenings & mock interviews for any stream',
     icon: UserCheck,
-    desc: 'Claim official screening links from recruiters or practice sales pitch and engineering interview questions before company rounds in a real-time voice room.',
+    desc: 'Claim official screening links from prospective employers or rehearse corporate interviews, client pitches, clinical scenarios, legal case questions, and technical problem-solving before live rounds.',
     capabilities: [
-      'Browser voice studio with WebRTC real-time connection',
+      'Browser voice studio with WebRTC real-time connection in 11 languages',
       'Comprehensive 6-axis report with actionable improvement areas',
       'Fast-track tokenized claim with session security protection',
     ],
-    audience: 'Active job seekers, lateral hires & interview applicants',
+    audience: 'Active job seekers, lateral hires, professionals & applicants across all streams',
     orgLabel: 'Target role or domain (optional)',
-    orgPlaceholder: 'e.g. Backend SDE / BDA Specialist',
+    orgPlaceholder: 'e.g. Sales Associate, Medical Officer, Legal Counsel, or SDE',
   },
 ]
 
@@ -57,36 +57,36 @@ const ACADEMIC_ROLES = [
   {
     id: 'teacher',
     track: 'academic',
-    category: 'Academic Assessor',
+    category: 'Higher Education Assessment',
     title: 'Faculty / Professor',
-    tagline: 'Conduct oral vivas & live coding defenses',
+    tagline: 'Conduct oral vivas, thesis defenses & practical lab evaluations across all disciplines',
     icon: GraduationCap,
-    desc: 'Assign practical coding problems in Python, C, C++, or Java. Listen to students explain their algorithms live over WebRTC and review 6-axis graded scorecards with Big-O oral defense metrics.',
+    desc: 'Evaluate student oral mastery in medicine, law, MBA, sciences, or engineering. Conduct clinical case vivas, moot court defenses, business case analyses, or STEM coding exams with anti-cheat speech defense.',
     capabilities: [
-      'Split-screen live code editor with compiler diagnostics',
-      'Time & space complexity oral defense verification in 11 languages',
-      'Class viva roster table with exportable PDF scorecards',
+      'Universal oral viva voce with deep conceptual follow-ups in 11 languages',
+      'Optional live compiler sandbox for computer science streams',
+      'Class viva roster table with exportable, human-reviewed PDF scorecards',
     ],
-    audience: 'Universities, engineering colleges & lab instructors',
+    audience: 'Medical examiners, law faculty, business professors, humanities & engineering instructors',
     orgLabel: 'University or College name',
-    orgPlaceholder: 'e.g. COEP Technological University',
+    orgPlaceholder: 'e.g. All India Institute of Medical Sciences or National Law School',
   },
   {
     id: 'student',
     track: 'academic',
-    category: 'Academic Candidate',
+    category: 'Academic Examination & Practice',
     title: 'Student',
-    tagline: 'Take assigned vivas & practice oral defense aloud',
+    tagline: 'Take assigned course vivas & practice oral defense aloud in any field',
     icon: Code2,
-    desc: 'Complete assigned lab examinations from your professor or practice solving coding challenges while articulating algorithmic complexity in Hinglish, Hindi, Marathi, or English.',
+    desc: 'Complete assigned lab examinations and oral vivas from your professors, or run private mock practice in medicine, law, business management, sciences, or engineering.',
     capabilities: [
-      'Interactive compiler sandbox with 3 guided defense attempts',
-      'Instant feedback on algorithmic logic, fluency, and confidence',
-      'Private practice history and professor-released grade reports',
+      'Oral defense practice in Hinglish, Hindi, Marathi, or English',
+      'Instant feedback on subject accuracy, verbal fluency, and composure',
+      'Review official professor-released grades and reviewer commentary',
     ],
-    audience: 'Engineering students & computer science undergraduates',
+    audience: 'Medical interns, law students, MBA candidates & undergraduates across all faculties',
     orgLabel: 'College or Institute name',
-    orgPlaceholder: 'e.g. VJTI Mumbai',
+    orgPlaceholder: 'e.g. VJTI Mumbai or Government Medical College',
   },
 ]
 
@@ -398,7 +398,7 @@ export default function SelectRole() {
                 </h2>
               </div>
               <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
-                Academic workflows: Faculty assigns coding viva links; Student defends code orally.
+                Academic workflows: Faculty assigns oral viva links; Student presents case defense aloud.
               </p>
             </div>
 
@@ -408,7 +408,7 @@ export default function SelectRole() {
             {/* Centered Connector */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '12px' }}>
               <ArrowDown size={14} strokeWidth={1.5} />
-              <span>Student joins professor viva &amp; defends code</span>
+              <span>Student joins professor viva &amp; defends oral examination</span>
               <ArrowDown size={14} strokeWidth={1.5} />
             </div>
 

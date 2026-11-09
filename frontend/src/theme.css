@@ -687,3 +687,54 @@ input::placeholder, textarea::placeholder {
     box-shadow: none !important;
   }
 }
+
+/* ---------- 11-Language Left-to-Right Sliding Carousel ---------- */
+@keyframes slide-ltr {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+
+.language-marquee-wrapper {
+  overflow: hidden;
+  width: 100%;
+  position: relative;
+  padding: 14px 0;
+  mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+}
+
+.language-slider-ltr {
+  display: flex;
+  width: max-content;
+  gap: 14px;
+  animation: slide-ltr 30s linear infinite;
+}
+
+.language-slider-ltr:hover {
+  animation-play-state: paused;
+}
+
+.language-circle-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: border-color 140ms ease-out, transform 140ms ease-out;
+}
+
+.language-circle-pill:hover {
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}

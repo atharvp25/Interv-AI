@@ -49,10 +49,10 @@ export default function StudentDashboardView({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
         <div>
           <h1 style={{ fontSize: '24px', fontWeight: 600, color: 'var(--text)', margin: '0 0 4px 0' }}>
-            Student lab &amp; viva workspace
+            Student viva &amp; assessment workspace
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: 0 }}>
-            {user?.organization ? `${user.organization} · ` : ''}Practice writing code and defending algorithmic complexity aloud before lab examinations.
+            {user?.organization ? `${user.organization} · ` : ''}Practice oral vivas, case study defenses, and conceptual exams aloud across medicine, law, business, and STEM.
           </p>
         </div>
 
@@ -129,7 +129,7 @@ export default function StudentDashboardView({
         practiceEvals.length === 0 ? (
           <EmptyState
             title="No practice vivas yet"
-            description="Run a mock coding and oral defense session in English, Hindi, or Marathi to receive a 6-axis breakdown."
+            description="Run a mock oral defense session in English, Hindi, or any regional language to receive a 6-axis breakdown."
             actionLabel="Start practice viva"
             onAction={() => navigate('/setup')}
           />
@@ -140,7 +140,7 @@ export default function StudentDashboardView({
                 <tr>
                   <th>Practice topic</th>
                   <th>Language</th>
-                  <th className="numeric">Code &amp; logic</th>
+                  <th className="numeric">Domain competence</th>
                   <th className="numeric">Oral defense</th>
                   <th className="numeric">Fluency</th>
                   <th className="numeric">Overall grade</th>

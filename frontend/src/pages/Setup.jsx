@@ -18,6 +18,8 @@ import {
   Users,
   Check,
   Ban,
+  Stethoscope,
+  Scale,
 } from 'lucide-react'
 import { AuthContext } from '../context/AuthContext'
 import LinkExpiryPicker from '../components/LinkExpiryPicker'
@@ -40,29 +42,46 @@ const SUPPORTED_LANGUAGES = [
 const ROLE_TRACK_CONFIGS = {
   recruiter: [
     {
-      id: 'tech',
-      title: 'Technical software engineer (SDE) screening',
-      subtitle: 'Live code editor + oral defense',
-      description: 'Assess algorithmic problem-solving, Python/C/C++/Java implementation, and verbal explanation.',
-      icon: Code,
-      badge: 'Code editor',
-      defaultRoleTitle: 'Technical Software Engineer (SDE) Screening',
-      presetTitle: 'Apply standard SDE rubric',
-      backendTrack: 'tech',
-      presetJd: `Role: Full Stack / Backend Software Engineer (SDE)
-Key Requirements:
-- Strong algorithmic problem solving in Python, Data Structures (Hash Maps, Trees, Graphs, Sorting).
-- Ability to explain time and space complexity (Big-O) aloud clearly.
-- RESTful API design, database querying, and debugging skills.
-- Clean code readability, edge case handling, and modular architecture.`,
+      id: 'clinical_health',
+      title: 'Clinical healthcare & medical specialist screening',
+      subtitle: 'Oral diagnostic reasoning & patient communication',
+      description: 'Evaluate clinical symptom triage, differential diagnosis justification, pharmacology protocol, and bedside communication.',
+      icon: Stethoscope,
+      badge: 'Clinical / Medical',
+      defaultRoleTitle: 'Clinical Healthcare Specialist Screening',
+      presetTitle: 'Apply clinical healthcare rubric',
+      backendTrack: 'bda',
+      presetJd: `Role: Clinical Healthcare Specialist / Medical Officer
+Key Evaluation Competencies:
+- Systematic clinical inquiry, chief complaint triage, and differential diagnosis formulation.
+- Pharmacology safety: drug-drug interactions, contraindications, and emergency dosage protocols.
+- Patient-centric communication: explaining complex conditions with empathy in regional languages.
+- Ethical compliance, patient privacy (HIPAA/DISHA guidelines), and evidence-based medicine justification.`,
+    },
+    {
+      id: 'legal_counsel',
+      title: 'Corporate legal counsel & compliance screening',
+      subtitle: 'Statutory interpretation & regulatory oral defense',
+      description: 'Assess dispute mitigation, contract liability analysis, statutory compliance, and persuasive oral advocacy.',
+      icon: Scale,
+      badge: 'Legal / Regulatory',
+      defaultRoleTitle: 'Corporate Legal Counsel Screening',
+      presetTitle: 'Apply legal counsel rubric',
+      backendTrack: 'bda',
+      presetJd: `Role: Corporate Legal Counsel & Compliance Lead
+Key Evaluation Competencies:
+- Commercial contract risk analysis: indemnity clauses, liability caps, and termination provisions.
+- Statutory regulatory compliance: Companies Act, arbitration frameworks, and data protection law.
+- Rapid oral issue spotting, persuasive argument structuring, and cross-examination resilience.
+- Clear stakeholder advisory: translating complex legal jargon into decisive executive counsel.`,
     },
     {
       id: 'bda',
-      title: 'BDA / enterprise sales screening',
+      title: 'Enterprise BDA & corporate sales screening',
       subtitle: 'Consultative pitch & objection handling',
       description: 'Prospective buyer simulation evaluating discovery, pricing pushback, and closing clarity.',
       icon: Briefcase,
-      badge: 'Role-play',
+      badge: 'Enterprise Sales',
       defaultRoleTitle: 'Enterprise BDA Sales & Pitch Screening',
       presetTitle: 'Apply standard BDA sales rubric',
       backendTrack: 'bda',
@@ -74,31 +93,65 @@ Key Requirements:
 - Clear closing methodology, contract pilot proposal, and follow-up urgency.`,
     },
     {
-      id: 'ops',
-      title: 'Operations & customer success screening',
-      subtitle: 'Situational judgment & stakeholder communication',
-      description: 'Evaluate escalation handling, root-cause communication, and operational coordination.',
-      icon: Users,
-      badge: 'Situational',
-      defaultRoleTitle: 'Operations & Customer Success Screening',
-      presetTitle: 'Apply standard operations rubric',
-      backendTrack: 'bda',
-      presetJd: `Role: Operations Specialist & Customer Success Manager
+      id: 'tech',
+      title: 'Technical software engineer (SDE) screening',
+      subtitle: 'Live code editor + oral defense',
+      description: 'Assess algorithmic problem-solving, Python/C/C++/Java implementation, and verbal explanation.',
+      icon: Code,
+      badge: 'Software Engineering',
+      defaultRoleTitle: 'Technical Software Engineer (SDE) Screening',
+      presetTitle: 'Apply standard SDE rubric',
+      backendTrack: 'tech',
+      presetJd: `Role: Full Stack / Backend Software Engineer (SDE)
 Key Requirements:
-- High empathy and professional de-escalation during client escalations.
-- SLA adherence, root-cause incident analysis, and vendor coordination.
-- Clear verbal communication in English, Hinglish, or regional languages.
-- Process efficiency and analytical decision making under pressure.`,
+- Strong algorithmic problem solving in Python, Data Structures (Hash Maps, Trees, Graphs, Sorting).
+- Ability to explain time and space complexity (Big-O) aloud clearly.
+- RESTful API design, database querying, and debugging skills.
+- Clean code readability, edge case handling, and modular architecture.`,
     },
   ],
   teacher: [
+    {
+      id: 'med_viva',
+      title: 'MBBS clinical case presentation & pharmacology viva',
+      subtitle: 'Oral diagnostic reasoning & clinical protocol defense',
+      description: 'Medical students present patient case histories, defend diagnostic tests, and explain pharmacotherapy aloud.',
+      icon: Stethoscope,
+      badge: 'Medical viva',
+      defaultRoleTitle: 'MBBS Clinical Medicine Oral Viva',
+      presetTitle: 'Apply clinical medicine viva syllabus',
+      backendTrack: 'bda',
+      presetJd: `Academic Assessment: MBBS Clinical Medicine & Pharmacology Oral Viva
+Examination Syllabus:
+- Comprehensive case history presentation, vital sign interpretation, and differential diagnostic tree.
+- Pharmacology rationale: first-line therapeutics, adverse drug reactions, and contraindications.
+- Pathophysiology oral defense: articulating disease mechanism and diagnostic laboratory findings.
+- Clinical ethics, medical jurisprudence, and emergency triage response protocols.`,
+    },
+    {
+      id: 'law_moot',
+      title: 'Constitutional law & moot court oral defense',
+      subtitle: 'Appellate advocacy & judicial inquiry simulation',
+      description: 'Law students present legal arguments, cite landmark precedents, and answer probing judicial questions.',
+      icon: Scale,
+      badge: 'Law moot viva',
+      defaultRoleTitle: 'Constitutional Law & Moot Court Oral Defense',
+      presetTitle: 'Apply constitutional law moot rubric',
+      backendTrack: 'bda',
+      presetJd: `Academic Assessment: Constitutional Law & Moot Court Oral Defense
+Examination Rubric:
+- Sound invocation of statutory provisions, constitutional articles, and binding appellate precedents.
+- Clear framing of propositions, jurisdictional standing, and balance of convenience.
+- Composure under direct judicial questioning and ability to rebut adversarial arguments.
+- Professional courtroom decorum, oral clarity, and precise legal terminology in English and regional languages.`,
+    },
     {
       id: 'lab_viva',
       title: 'CS practical coding & lab oral viva',
       subtitle: 'Live code editor + lab rubric defense',
       description: 'Students implement data structures in the editor and orally explain time complexity and edge cases.',
       icon: Code,
-      badge: 'Lab viva',
+      badge: 'CS practical viva',
       defaultRoleTitle: 'CS Practical Coding & Lab Oral Viva',
       presetTitle: 'Apply standard Python lab rubric',
       backendTrack: 'tech',
@@ -110,48 +163,63 @@ Lab Rubric:
 - Adherence to academic integrity and anti-cheat voice defense.`,
     },
     {
-      id: 'theory_viva',
-      title: 'Core engineering & DSA theory viva',
-      subtitle: 'Oral examination on algorithms, OOP & OS',
-      description: 'Structured oral examination covering asymptotic complexity, graph traversals, and system fundamentals.',
-      icon: BookOpen,
-      badge: 'Theory viva',
-      defaultRoleTitle: 'Core CS & DSA Theory Oral Viva',
-      presetTitle: 'Apply standard CS theory syllabus',
-      backendTrack: 'tech',
-      presetJd: `Academic Course: Core Computer Science & Algorithms Theory Viva
-Viva Syllabus:
-- Asymptotic notations: Big-O, Omega, Theta analysis.
-- Tree and graph traversals: BFS, DFS, Dijkstra, AVL trees.
-- Object-Oriented Programming (OOP): Inheritance, Polymorphism, Encapsulation, Abstraction.
-- Operating Systems & Database fundamentals: Deadlocks, Paging, ACID properties, Normalization.`,
-    },
-    {
       id: 'capstone',
-      title: 'Capstone project oral defense',
-      subtitle: 'System architecture & implementation defense',
-      description: 'Students defend their project architecture, API schemas, database choices, and individual contributions.',
+      title: 'Interdisciplinary capstone thesis oral defense',
+      subtitle: 'Methodology, research rigor & outcomes defense',
+      description: 'Students across all disciplines defend their research methodology, analysis, and conclusions.',
       icon: GraduationCap,
-      badge: 'Project defense',
+      badge: 'Thesis defense',
       defaultRoleTitle: 'Final Year Capstone Project Defense',
-      presetTitle: 'Apply standard capstone defense rubric',
-      backendTrack: 'tech',
-      presetJd: `Academic Assessment: Final Year Capstone Project Oral Defense
+      presetTitle: 'Apply capstone defense rubric',
+      backendTrack: 'bda',
+      presetJd: `Academic Assessment: Final Year Capstone Project & Thesis Oral Defense
 Defense Criteria:
-- End-to-end system architecture and tech stack justification.
-- API design, database schemas, normalization, and scaling considerations.
-- Security practices, authentication flows, and automated testing.
-- Individual contribution breakdown and oral technical defense.`,
+- Clear articulation of research hypothesis, problem statement, and real-world significance.
+- Defense of methodology, data collection integrity, experimental controls, and analytical validity.
+- Critical evaluation of study limitations, comparative literature review, and ethical considerations.
+- Coherent multi-turn oral presentation and composure during professor Q&A inquiry.`,
     },
   ],
   student: [
+    {
+      id: 'student_med',
+      title: 'Clinical case study & medical viva prep',
+      subtitle: 'Oral diagnostic reasoning & pharmacology practice',
+      description: 'Practice walking through patient symptoms, formulating differential diagnoses, and defending prescriptions aloud.',
+      icon: Stethoscope,
+      badge: 'Medical prep',
+      defaultRoleTitle: 'Medical Case Study Viva Practice',
+      presetTitle: 'Load medical viva practice rubric',
+      backendTrack: 'bda',
+      presetJd: `Practice Topic: Clinical Case Presentation & Pharmacology Viva Practice
+Focus Areas:
+- Explaining symptom etiology, disease pathogenesis, and vital signs interpretation aloud.
+- Defending medication choices, contraindications, and emergency treatment steps.
+- Practicing patient consultation and clear clinical articulation in English or regional languages.`,
+    },
+    {
+      id: 'student_law',
+      title: 'Law moot court & precedent argument prep',
+      subtitle: 'Oral advocacy & case law defense',
+      description: 'Practice citing legal precedents, formulating arguments under bench questioning, and answering tough judge queries.',
+      icon: Scale,
+      badge: 'Law prep',
+      defaultRoleTitle: 'Moot Court Oral Defense Practice',
+      presetTitle: 'Load moot court practice rubric',
+      backendTrack: 'bda',
+      presetJd: `Practice Topic: Constitutional Law & Moot Court Advocacy Practice
+Focus Areas:
+- Presenting legal propositions clearly within time constraints.
+- Citing relevant landmark judgments and defending against judicial skepticism.
+- Rebutting counter-arguments calmly with professional legal composure.`,
+    },
     {
       id: 'student_lab',
       title: 'CS practical lab exam & coding viva prep',
       subtitle: 'Live code editor + oral defense',
       description: 'Practice solving programming problems and defending your code aloud before your course viva.',
       icon: Code,
-      badge: 'Lab prep',
+      badge: 'CS lab prep',
       defaultRoleTitle: 'Python Data Structures Lab Viva Practice',
       presetTitle: 'Load lab viva practice rubric',
       backendTrack: 'tech',
@@ -162,23 +230,71 @@ Focus Areas:
 - Answering follow-up questions from the AI professor on edge cases.`,
     },
     {
-      id: 'student_theory',
-      title: 'Computer science theory & DSA viva prep',
-      subtitle: 'Oral defense on algorithms, OOP & systems',
-      description: 'Practice answering conceptual engineering questions in your preferred language.',
-      icon: BookOpen,
-      badge: 'Theory prep',
-      defaultRoleTitle: 'CS Theory & DSA Viva Prep',
-      presetTitle: 'Load CS theory practice syllabus',
-      backendTrack: 'tech',
-      presetJd: `Practice Topic: CS Theory, Algorithms & OOP Viva Prep
+      id: 'student_mgmt',
+      title: 'MBA case study & strategy viva prep',
+      subtitle: 'Business framework & oral analysis practice',
+      description: 'Practice defending market entry, unit economics, financial trade-offs, and strategic decision trees.',
+      icon: Briefcase,
+      badge: 'Business prep',
+      defaultRoleTitle: 'MBA Strategy Case Defense Practice',
+      presetTitle: 'Load business case practice rubric',
+      backendTrack: 'bda',
+      presetJd: `Practice Topic: MBA Case Analysis & Business Strategy Viva Practice
 Focus Areas:
-- Explaining sorting algorithms, search complexity, and recursion trees aloud.
-- Real-world examples of OOP principles (Polymorphism, Abstraction).
-- Database transactions, indexing, and OS scheduling concepts.`,
+- Structuring qualitative and quantitative insights using standard management frameworks.
+- Articulating unit economics, competitive moat, and revenue model defensibility aloud.
+- Handling follow-up probing questions with executive poise and data backing.`,
     },
   ],
   candidate: [
+    {
+      id: 'cand_med',
+      title: 'Healthcare & clinical specialist interview prep',
+      subtitle: 'Clinical protocols & patient triage simulation',
+      description: 'Practice answering clinical case questions, patient communication, and hospital protocols.',
+      icon: Stethoscope,
+      badge: 'Clinical prep',
+      defaultRoleTitle: 'Clinical Specialist Practice Interview',
+      presetTitle: 'Load clinical practice rubric',
+      backendTrack: 'bda',
+      presetJd: `Target Role: Clinical Specialist / Medical Officer
+Practice Goals:
+- Explain diagnostic steps and clinical workflow clearly under pressure.
+- Demonstrate patient-first bedside communication and de-escalation in Indian languages.
+- Defend protocol choices, emergency triage priorities, and safety standards.`,
+    },
+    {
+      id: 'cand_legal',
+      title: 'Legal counsel & compliance interview prep',
+      subtitle: 'Regulatory advisory & risk negotiation role-play',
+      description: 'Practice answering legal scenario questions, contract dispute handling, and compliance defense.',
+      icon: Scale,
+      badge: 'Legal prep',
+      defaultRoleTitle: 'Legal Counsel Practice Interview',
+      presetTitle: 'Load legal practice rubric',
+      backendTrack: 'bda',
+      presetJd: `Target Role: Corporate Legal Counsel / Compliance Associate
+Practice Goals:
+- Deliver crisp verbal analysis of commercial contract clauses and risk allocations.
+- Explain compliance implications in plain business terms to non-legal stakeholders.
+- Maintain professional composure during adversarial questioning.`,
+    },
+    {
+      id: 'cand_bda',
+      title: 'Enterprise BDA & sales pitch interview prep',
+      subtitle: 'Voice pitching & negotiation role-play',
+      description: 'Practice product pitches and price objection handling in 10+ Indian languages.',
+      icon: Briefcase,
+      badge: 'Sales prep',
+      defaultRoleTitle: 'BDA Sales Pitch & Objection Handling Prep',
+      presetTitle: 'Load BDA sales practice rubric',
+      backendTrack: 'bda',
+      presetJd: `Target Role: Business Development Associate (BDA)
+Practice Goals:
+- Master cold pitch opening and value proposition in Hinglish or regional languages.
+- Handle tough price and timing objections persuasively without sounding defensive.
+- Secure customer commitment and close next steps.`,
+    },
     {
       id: 'cand_tech',
       title: 'Software engineer (SDE) technical prep',
@@ -194,22 +310,6 @@ Practice Goals:
 - Write optimal Python code under time constraints.
 - Defend space and time complexity trade-offs aloud.
 - Walk through edge cases, test inputs, and system scalability.`,
-    },
-    {
-      id: 'cand_bda',
-      title: 'BDA / sales pitch & objection prep',
-      subtitle: 'Voice pitching & negotiation role-play',
-      description: 'Practice product pitches and price objection handling in 10+ Indian languages.',
-      icon: Briefcase,
-      badge: 'Sales prep',
-      defaultRoleTitle: 'BDA Sales Pitch & Objection Handling Prep',
-      presetTitle: 'Load BDA sales practice rubric',
-      backendTrack: 'bda',
-      presetJd: `Target Role: Business Development Associate (BDA)
-Practice Goals:
-- Master cold pitch opening and value proposition in Hinglish or regional languages.
-- Handle tough price and timing objections persuasively without sounding defensive.
-- Secure customer commitment and close next steps.`,
     },
   ],
 }

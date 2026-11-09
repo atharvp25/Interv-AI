@@ -2,12 +2,12 @@ import React, { memo, useState, useEffect } from 'react'
 import { X, Download, Printer, Award, AlertCircle } from 'lucide-react'
 
 const AXES = [
-  { key: 'technical_accuracy', label: 'Technical accuracy' },
-  { key: 'communication', label: 'Communication' },
-  { key: 'confidence', label: 'Confidence' },
-  { key: 'depth', label: 'Concept depth' },
-  { key: 'completeness', label: 'Completeness' },
-  { key: 'overall_score', label: 'Overall score' },
+  { key: 'technical_accuracy', label: 'Domain knowledge & subject competence' },
+  { key: 'communication', label: 'Verbal articulation & speech fluency' },
+  { key: 'confidence', label: 'Professional composure & poise' },
+  { key: 'depth', label: 'Analytical depth & critical thinking' },
+  { key: 'completeness', label: 'Solution thoroughness & completeness' },
+  { key: 'overall_score', label: 'Composite evaluation score' },
 ]
 
 function ScoreRadar({ scores = {} }) {

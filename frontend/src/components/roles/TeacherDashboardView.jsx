@@ -99,7 +99,7 @@ export default function TeacherDashboardView({
             Faculty viva &amp; lab roster
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: 0 }}>
-            {user?.organization ? `${user.organization} · ` : ''}Conduct practical coding vivas and oral complexity defenses with human-reviewed grading.
+            {user?.organization ? `${user.organization} · ` : ''}Conduct multi-discipline oral vivas, diagnostic case exams, and defense assessments across medicine, law, business, and STEM.
           </p>
         </div>
 
@@ -195,7 +195,7 @@ export default function TeacherDashboardView({
         assignedEvals.length === 0 ? (
           <EmptyState
             title="No student vivas completed yet"
-            description="Create a viva exam link and share it with your class. Student code submissions and oral defenses will appear in this roster."
+            description="Create a viva exam link and share it with your students. Student oral defenses, case presentations, and submissions will appear in this roster."
             actionLabel="Create viva link"
             onAction={() => navigate('/setup')}
           />
@@ -213,7 +213,7 @@ export default function TeacherDashboardView({
                   <th>Language</th>
                   <th className="sortable numeric" onClick={() => handleSort('technical')}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                      Code &amp; logic <ArrowUpDown size={12} strokeWidth={1.5} />
+                      Domain competence <ArrowUpDown size={12} strokeWidth={1.5} />
                     </span>
                   </th>
                   <th className="sortable numeric" onClick={() => handleSort('depth')}>
