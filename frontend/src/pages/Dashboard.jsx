@@ -316,6 +316,19 @@ export default function Dashboard() {
   }, [effectiveRole, isAssessor])
 
   useEffect(() => {
+    if (!token && !guestMode) {
+      navigate('/login', { replace: true })
+      return
+    }
+    if (guestMode && !effectiveRole) {
+      navigate('/select-role', { replace: true })
+      return
+    }
+    if (user && (user.needs_onboarding || !user.role)) {
+      navigate('/select-role', { replace: true })
+      return
+    }
+
     if (!token && guestMode) {
       const sampleList =
         GUEST_SAMPLE_EVALUATIONS[effectiveRole] || GUEST_SAMPLE_EVALUATIONS.student
@@ -506,6 +519,10 @@ export default function Dashboard() {
       ]
 
   const roleName = ROLE_LABELS[effectiveRole] || 'Student'
+
+  if (!effectiveRole) {
+    return null
+  }
 
   return (
     <div className="b2b-app-shell">

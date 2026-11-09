@@ -7,6 +7,7 @@ import Interview from './pages/Interview'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import AssessEntry from './pages/AssessEntry'
+import SelectRole from './pages/SelectRole'
 import Header from './components/Header'
 import Footer from './components/Footer'
 import RoleSelectionModal from './components/RoleSelectionModal'
@@ -75,6 +76,7 @@ function App() {
                 <Route path="/" element={<PageWrap><Home /></PageWrap>} />
                 <Route path="/login" element={<PageWrap><Login /></PageWrap>} />
                 <Route path="/register" element={<PageWrap><Register /></PageWrap>} />
+                <Route path="/select-role" element={<PageWrap><SelectRole /></PageWrap>} />
                 <Route path="/assess/:token" element={<PageWrap><AssessEntry /></PageWrap>} />
                 <Route
                   path="/dashboard"

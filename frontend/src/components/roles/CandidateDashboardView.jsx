@@ -276,7 +276,7 @@ export default function CandidateDashboardView({
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(28, 25, 23, 0.45)',
+            background: 'rgba(28, 25, 23, 0.65)',
             zIndex: 9999,
             display: 'flex',
             alignItems: 'center',
@@ -286,9 +286,10 @@ export default function CandidateDashboardView({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ width: '100%', maxWidth: '820px', maxHeight: '90vh', overflowY: 'auto' }}
+            style={{ width: '100%', maxWidth: '860px', maxHeight: '90vh', overflowY: 'auto' }}
           >
             <ScorecardReport
+              evaluation={selectedEval}
               ev={selectedEval}
               formatDate={formatDate}
               onDownloadPdf={!String(selectedEval._id).startsWith('sample_') ? () => handleDownloadPdf(selectedEval) : null}

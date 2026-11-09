@@ -154,8 +154,10 @@ export const AuthProvider = ({ children }) => {
       setUser(data.user);
       setShowRoleModal(false);
       return data.user;
-    } else if (guestMode) {
+    } else if (guestMode || !token) {
+      sessionStorage.setItem('intervai_guest_mode', 'true');
       sessionStorage.setItem('intervai_guest_role', role);
+      setGuestMode(true);
       setGuestRole(role);
       setShowRoleModal(false);
       return { role, isGuest: true };
@@ -164,17 +166,14 @@ export const AuthProvider = ({ children }) => {
 
   const startGuestMode = () => {
     sessionStorage.setItem('intervai_guest_mode', 'true');
-    sessionStorage.removeItem('intervai_guest_role');
     setGuestMode(true);
-    setGuestRole('');
-    setShowRoleModal(true);
-    navigate('/dashboard');
+    navigate('/select-role');
   };
 
   const openGuestRoleSwitcher = () => {
-    if (guestMode && !token) {
-      setShowRoleModal(true);
-    }
+    sessionStorage.setItem('intervai_guest_mode', 'true');
+    setGuestMode(true);
+    navigate('/select-role');
   };
 
   const triggerAuthRequired = (reason = 'Sign in with Google is required to create or practice live voice interviews.') => {
