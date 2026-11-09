@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useContext } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { AuthContext } from '../context/AuthContext'
-import { BarChart3, AlertCircle, Eye, RefreshCw } from 'lucide-react'
+import { AlertCircle, Eye, RefreshCw } from 'lucide-react'
+import { GoogleGIcon } from '../components/GoogleSignInButton'
 import RecruiterDashboardView from '../components/roles/RecruiterDashboardView'
 import TeacherDashboardView from '../components/roles/TeacherDashboardView'
 import StudentDashboardView from '../components/roles/StudentDashboardView'
 import CandidateDashboardView from '../components/roles/CandidateDashboardView'
+import { SkeletonCard } from '../components/ui/Skeleton'
 
 const GUEST_SAMPLE_EVALUATIONS = {
   teacher: [
@@ -385,17 +387,17 @@ export default function Dashboard() {
   }
 
   return (
-    <div style={{ maxWidth: '1080px', margin: '2.5rem auto', padding: '0 1.5rem', width: '100%' }}>
+    <div style={{ maxWidth: '1120px', margin: '2.5rem auto', padding: '0 1.5rem', width: '100%' }}>
       {/* Guest Explorer Banner */}
       {guestMode && !token && (
         <div
-          className="animate-in"
+          className="panel"
           style={{
-            background: 'rgba(245, 158, 11, 0.08)',
-            border: '1px solid rgba(245, 158, 11, 0.3)',
-            borderRadius: '12px',
+            background: 'var(--bg-surface-2)',
+            border: '1px solid var(--border)',
+            borderRadius: '8px',
             padding: '0.9rem 1.25rem',
-            marginBottom: '2rem',
+            marginBottom: '1.75rem',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -404,32 +406,40 @@ export default function Dashboard() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <Eye size={20} color="#d97706" />
+            <div style={{ padding: '0.45rem', borderRadius: '6px', background: 'var(--primary-soft)', color: 'var(--primary)', display: 'flex' }}>
+              <Eye size={18} />
+            </div>
             <div>
-              <strong style={{ fontSize: '0.92rem', color: '#b45309' }}>
-                Guest Explorer Preview — Viewing as{' '}
-                <span style={{ textTransform: 'capitalize' }}>{effectiveRole || 'Explorer'}</span>
-              </strong>
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0 }}>
-                You are previewing role-tailored sample data. To create real links or run live voice sessions, please sign in.
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <strong style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>
+                  Guest Preview:
+                </strong>
+                <span className="pn-badge pn-badge-primary" style={{ textTransform: 'capitalize' }}>
+                  {effectiveRole || 'Explorer'}
+                </span>
+              </div>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0.15rem 0 0 0' }}>
+                You are viewing sample mock data for this role. To create real tokenized links or conduct live voice assessments, please sign in.
               </p>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
             <button
+              type="button"
               onClick={openGuestRoleSwitcher}
               className="btn-secondary"
-              style={{ padding: '0.45rem 0.85rem', fontSize: '0.82rem', borderRadius: '10px' }}
+              style={{ padding: '0.45rem 0.85rem', fontSize: '0.82rem' }}
             >
-              <RefreshCw size={13} /> Switch Preview Role
+              <RefreshCw size={13} /> Switch Role
             </button>
-            <button
-              onClick={() => navigate('/login')}
-              className="btn-primary"
-              style={{ padding: '0.45rem 1rem', fontSize: '0.82rem', borderRadius: '10px' }}
+            <Link
+              to="/login"
+              className="btn-google-nav"
+              style={{ padding: '0.45rem 0.85rem', fontSize: '0.82rem' }}
             >
-              Sign In with Google
-            </button>
+              <GoogleGIcon size={14} />
+              <span>Sign in with Google</span>
+            </Link>
           </div>
         </div>
       )}
@@ -437,10 +447,11 @@ export default function Dashboard() {
       {error && (
         <div
           style={{
-            background: 'rgba(239, 68, 68, 0.1)',
+            background: 'rgba(255, 92, 124, 0.12)',
             color: 'var(--error)',
+            border: '1px solid rgba(255, 92, 124, 0.3)',
             padding: '1rem',
-            borderRadius: '8px',
+            borderRadius: '14px',
             marginBottom: '2rem',
             display: 'flex',
             alignItems: 'center',
@@ -452,12 +463,11 @@ export default function Dashboard() {
       )}
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
-          <BarChart3 className="spin" size={32} style={{ marginBottom: '1rem', color: 'var(--primary)' }} />
-          <p>Loading {effectiveRole} workspace...</p>
+        <div style={{ display: 'grid', gap: '1.25rem' }}>
+          <SkeletonCard rows={3} />
+          <SkeletonCard rows={4} />
         </div>
       ) : (
-        /* ── Role-Specific Independent Dashboards (Zero Concatenation) ── */
         <>
           {effectiveRole === 'recruiter' && (
             <RecruiterDashboardView

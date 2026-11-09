@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { AuthContext } from '../context/AuthContext';
 import GoogleSignInButton from '../components/GoogleSignInButton';
 import {
@@ -12,7 +13,9 @@ import {
   ArrowRight,
   UserCheck,
   Sparkles,
+  Lock,
 } from 'lucide-react';
+import { SkeletonCard } from '../components/ui/Skeleton';
 
 export default function AssessEntry() {
   const { token: shareToken } = useParams();
@@ -84,7 +87,6 @@ export default function AssessEntry() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Could not start assessment.');
 
-      // Save claim & session secrets for one-claimer validation
       if (data.claim_secret) {
         localStorage.setItem(`intervai_claim_${shareToken}`, data.claim_secret);
       }
@@ -105,8 +107,8 @@ export default function AssessEntry() {
 
   if (loading) {
     return (
-      <div style={{ maxWidth: '560px', margin: '5rem auto', padding: '0 1.5rem', textAlign: 'center' }}>
-        <h3>Verifying Assessment Link...</h3>
+      <div style={{ maxWidth: '580px', margin: '4rem auto', padding: '0 1.5rem' }}>
+        <SkeletonCard rows={5} />
       </div>
     );
   }
@@ -114,10 +116,10 @@ export default function AssessEntry() {
   if (error) {
     return (
       <div style={{ maxWidth: '540px', margin: '4rem auto', padding: '0 1.5rem' }}>
-        <div className="panel animate-in" style={{ textAlign: 'center', padding: '2.5rem' }}>
-          <AlertTriangle size={48} color="var(--error)" style={{ marginBottom: '1rem' }} />
-          <h2 className="brand-font" style={{ marginBottom: '0.5rem' }}>Assessment Link Unavailable</h2>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>{error}</p>
+        <div className="panel" style={{ textAlign: 'center', padding: '2.5rem', borderRadius: '12px' }}>
+          <AlertTriangle size={40} color="var(--error)" style={{ marginBottom: '1rem' }} />
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Assessment Link Unavailable</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '1.5rem' }}>{error}</p>
           <button className="btn-secondary" onClick={() => navigate('/')}>
             Return Home
           </button>
@@ -129,23 +131,29 @@ export default function AssessEntry() {
   const isTech = assessment?.track === 'tech';
 
   return (
-    <div style={{ maxWidth: '620px', margin: '3rem auto', padding: '0 1.5rem' }}>
-      <div className="panel animate-in" style={{ padding: '2.25rem', borderRadius: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
+    <div style={{ maxWidth: '600px', margin: '3rem auto', padding: '0 1.5rem', width: '100%' }}>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="panel"
+        style={{ padding: '2.2rem', borderRadius: '12px', position: 'relative' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.1rem' }}>
           <span
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: '0.4rem',
-              padding: '0.25rem 0.75rem',
-              borderRadius: '16px',
+              padding: '0.25rem 0.65rem',
+              borderRadius: '6px',
               fontSize: '0.78rem',
               fontWeight: 600,
-              background: isTech ? 'rgba(37, 99, 235, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-              color: isTech ? 'var(--primary)' : 'var(--success)',
+              background: 'var(--primary-soft)',
+              color: 'var(--primary)',
+              border: '1px solid rgba(37, 99, 235, 0.25)',
             }}
           >
-            {isTech ? <Code size={15} /> : <Briefcase size={15} />}
+            {isTech ? <Code size={14} /> : <Briefcase size={14} />}
             {isTech ? 'Practical Coding & Oral Viva' : 'BDA Sales & Objection Role-Play'}
           </span>
 
@@ -154,11 +162,11 @@ export default function AssessEntry() {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '0.35rem',
-              padding: '0.25rem 0.7rem',
-              borderRadius: '16px',
+              padding: '0.25rem 0.65rem',
+              borderRadius: '6px',
               fontSize: '0.78rem',
               fontWeight: 600,
-              background: 'var(--bg-main)',
+              background: 'var(--bg-surface-2)',
               border: '1px solid var(--border)',
               color: 'var(--text-muted)',
             }}
@@ -167,11 +175,11 @@ export default function AssessEntry() {
           </span>
         </div>
 
-        <h1 className="brand-font" style={{ fontSize: '1.85rem', marginBottom: '0.35rem' }}>
+        <h1 style={{ fontSize: '1.65rem', marginBottom: '0.35rem', fontWeight: 700, color: 'var(--text-main)' }}>
           {assessment.role_title}
         </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', marginBottom: '1.5rem' }}>
-          Assigned by <strong>{assessment.owner_name}</strong>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '1.5rem' }}>
+          Assigned by <strong style={{ color: 'var(--text-main)' }}>{assessment.owner_name}</strong>
           {assessment.owner_organization ? ` (${assessment.owner_organization})` : ''} •{' '}
           <span style={{ textTransform: 'capitalize' }}>{assessment.owner_role}</span> Assessment
         </p>
@@ -181,26 +189,26 @@ export default function AssessEntry() {
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
             gap: '0.75rem',
-            padding: '1rem',
-            borderRadius: '12px',
-            background: 'var(--bg-main)',
+            padding: '0.85rem 1rem',
+            borderRadius: '8px',
+            background: 'var(--bg-surface-2)',
             border: '1px solid var(--border)',
-            marginBottom: '1.75rem',
+            marginBottom: '1.5rem',
             fontSize: '0.82rem',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Sparkles size={16} color="var(--primary)" />
+            <Sparkles size={15} color="var(--primary)" />
             <span><strong>{assessment.keywords_count}</strong> Boosted Keyterms</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Clock size={16} color="var(--primary)" />
+            <Clock size={15} color="var(--primary)" />
             <span>
               Attempts: <strong>{assessment.attempts_used}/{assessment.max_attempts}</strong>
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <ShieldCheck size={16} color="var(--success)" />
+            <ShieldCheck size={15} color="var(--primary)" />
             <span>One-Claimer Protected</span>
           </div>
         </div>
@@ -210,31 +218,32 @@ export default function AssessEntry() {
             style={{
               background: 'rgba(239, 68, 68, 0.1)',
               color: 'var(--error)',
-              padding: '0.85rem 1rem',
+              border: '1px solid rgba(239, 68, 68, 0.25)',
+              padding: '0.75rem 1rem',
               borderRadius: '8px',
               marginBottom: '1.25rem',
-              fontSize: '0.85rem',
+              fontSize: '0.84rem',
             }}
           >
             {claimError}
           </div>
         )}
 
-        <form onSubmit={handleStartAssessment} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+        <form onSubmit={handleStartAssessment} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {user ? (
             <div
               style={{
-                padding: '0.9rem 1rem',
-                borderRadius: '10px',
-                background: 'rgba(16, 185, 129, 0.08)',
-                border: '1px solid rgba(16, 185, 129, 0.25)',
+                padding: '0.85rem 1rem',
+                borderRadius: '8px',
+                background: 'var(--primary-soft)',
+                border: '1px solid rgba(37, 99, 235, 0.25)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.6rem',
-                fontSize: '0.88rem',
+                fontSize: '0.86rem',
               }}
             >
-              <UserCheck size={18} color="var(--success)" />
+              <UserCheck size={18} color="var(--primary)" />
               <span>
                 Signed in as <strong>{user.full_name || user.username}</strong> ({user.email}). This session will be bound to your account.
               </span>
@@ -242,7 +251,7 @@ export default function AssessEntry() {
           ) : (
             <>
               <div>
-                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Your Full Name *</label>
+                <label style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.35rem', display: 'block' }}>Your Full Name *</label>
                 <input
                   type="text"
                   required
@@ -252,7 +261,7 @@ export default function AssessEntry() {
                 />
               </div>
               <div>
-                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Your Email Address *</label>
+                <label style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.35rem', display: 'block' }}>Your Email Address *</label>
                 <input
                   type="email"
                   required
@@ -269,19 +278,23 @@ export default function AssessEntry() {
             style={{
               display: 'flex',
               alignItems: 'flex-start',
-              gap: '0.6rem',
-              fontSize: '0.82rem',
+              gap: '0.65rem',
+              fontSize: '0.8rem',
               color: 'var(--text-muted)',
               cursor: 'pointer',
               lineHeight: 1.45,
               marginTop: '0.25rem',
+              padding: '0.75rem',
+              borderRadius: '8px',
+              background: 'var(--bg-surface-2)',
+              border: '1px solid var(--border)',
             }}
           >
             <input
               type="checkbox"
               checked={consent}
               onChange={(e) => setConsent(e.target.checked)}
-              style={{ width: '16px', height: '16px', marginTop: '2px' }}
+              style={{ width: '16px', height: '16px', marginTop: '2px', accentColor: 'var(--primary)' }}
             />
             <span>
               I consent to real-time microphone audio processing via Gnani Prisma STT and AI-assisted evaluation. I understand the human assessor makes the final decision.
@@ -292,9 +305,9 @@ export default function AssessEntry() {
             type="submit"
             className="btn-primary"
             disabled={claiming}
-            style={{ width: '100%', padding: '0.9rem', fontSize: '1rem', justifyContent: 'center', marginTop: '0.5rem' }}
+            style={{ width: '100%', padding: '0.8rem', fontSize: '0.92rem', justifyContent: 'center', marginTop: '0.35rem', borderRadius: '8px' }}
           >
-            {claiming ? 'Claiming & Locking Session...' : 'Claim & Start Live Voice Assessment'} <ArrowRight size={18} />
+            {claiming ? 'Claiming & Locking Session...' : 'Claim & Start Live Voice Assessment'} <ArrowRight size={16} />
           </button>
         </form>
 
@@ -306,8 +319,7 @@ export default function AssessEntry() {
             <GoogleSignInButton />
           </div>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 }
-

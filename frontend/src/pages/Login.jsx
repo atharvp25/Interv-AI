@@ -2,7 +2,8 @@ import React, { useState, useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AuthContext } from '../context/AuthContext'
 import GoogleSignInButton from '../components/GoogleSignInButton'
-import { Eye, ShieldCheck, ArrowRight, KeyRound, CheckCircle2, Sparkles, ChevronDown, ChevronUp } from 'lucide-react'
+import { Eye, ShieldCheck, ArrowRight, KeyRound, Sparkles, ChevronDown, ChevronUp, Lock } from 'lucide-react'
+import { PLATFORM_NAME } from '../brand'
 
 export default function Login({ initialRegister = false }) {
   const { startGuestMode } = useContext(AuthContext)
@@ -28,60 +29,64 @@ export default function Login({ initialRegister = false }) {
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, padding: '3rem 1.25rem', minHeight: '80vh' }}>
-      <div className="panel animate-in" style={{ width: '100%', maxWidth: '460px', padding: '2.5rem', borderRadius: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }}>
-        
+      <div
+        className="panel"
+        style={{
+          width: '100%',
+          maxWidth: '440px',
+          padding: '2.5rem',
+          borderRadius: '12px',
+          boxShadow: 'var(--shadow-md)',
+        }}
+      >
         {/* Brand Header */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div
             style={{
-              display: 'inline-flex',
+              width: '40px',
+              height: '40px',
+              borderRadius: '8px',
+              background: 'var(--primary)',
+              color: '#FFFFFF',
+              display: 'flex',
               alignItems: 'center',
-              gap: '0.4rem',
-              padding: '0.3rem 0.85rem',
-              borderRadius: '20px',
-              fontSize: '0.78rem',
-              fontWeight: 600,
-              background: 'rgba(37, 99, 235, 0.08)',
-              color: 'var(--primary)',
-              border: '1px solid rgba(37, 99, 235, 0.2)',
-              marginBottom: '1rem',
+              justifyContent: 'center',
+              margin: '0 auto 1rem auto',
             }}
           >
-            <ShieldCheck size={14} /> Official Google OAuth 2.0 Security
+            <Sparkles size={20} />
           </div>
 
-          <h1 className="brand-font" style={{ fontSize: '2.1rem', margin: '0 0 0.5rem 0', fontWeight: 700, letterSpacing: '-0.5px' }}>
-            {initialRegister ? 'Join IntervAI' : 'Welcome to IntervAI'}
+          <h1
+            style={{
+              fontSize: '1.65rem',
+              margin: '0 0 0.45rem 0',
+              fontWeight: 700,
+              color: 'var(--text-main)',
+            }}
+          >
+            {initialRegister ? `Create your ${PLATFORM_NAME} account` : `Sign in to ${PLATFORM_NAME}`}
           </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', lineHeight: 1.5, margin: 0 }}>
-            AI-driven multilingual voice assessment platform for universities and enterprise hiring teams.
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', lineHeight: 1.5, margin: 0 }}>
+            AI-powered viva examination &amp; candidate screening platform.
           </p>
         </div>
 
-        {/* Primary Action: 1-Click Google OAuth */}
-        <div style={{ marginBottom: '1.75rem', textAlign: 'center' }}>
-          <div style={{ marginBottom: '1.25rem' }}>
-            <GoogleSignInButton onSuccessRedirect={() => navigate('/dashboard')} />
-          </div>
+        {/* Primary Action: Official Google OAuth */}
+        <div style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <GoogleSignInButton onSuccessRedirect={() => navigate('/dashboard')} />
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', fontSize: '0.76rem', color: 'var(--text-muted)' }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-              <CheckCircle2 size={13} color="var(--success)" /> Instant 1-Click Access
-            </span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-              <CheckCircle2 size={13} color="var(--success)" /> No Password Required
-            </span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-              <CheckCircle2 size={13} color="var(--success)" /> Role Onboarding
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.76rem', color: 'var(--text-faint)', marginTop: '0.85rem' }}>
+            <ShieldCheck size={13} color="var(--primary)" />
+            <span>Official Google OAuth 2.0 Security • Fast-track</span>
           </div>
         </div>
 
         {/* Divider */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '1.5rem 0' }}>
           <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
-          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Evaluation & Judging
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-faint)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            OR PREVIEW
           </span>
           <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
         </div>
@@ -94,19 +99,19 @@ export default function Login({ initialRegister = false }) {
           style={{
             width: '100%',
             justifyContent: 'center',
-            padding: '0.75rem 1rem',
-            marginBottom: '1.25rem',
-            borderRadius: '12px',
-            fontSize: '0.9rem',
+            padding: '0.65rem 1rem',
+            marginBottom: '1rem',
+            borderRadius: '8px',
+            fontSize: '0.88rem',
             fontWeight: 600,
           }}
         >
-          <Eye size={17} color="#d97706" />
+          <Eye size={16} color="var(--primary)" />
           <span>Explore in Guest Mode (Preview Any Role)</span>
         </button>
 
-        {/* Professional Discreet Candidate / Student Assessment Link Entry */}
-        <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
+        {/* Discreet Candidate / Student Assessment Link Entry */}
+        <div style={{ marginTop: '1.25rem', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
           <button
             type="button"
             onClick={() => setShowInviteDrawer(!showInviteDrawer)}
@@ -114,7 +119,7 @@ export default function Login({ initialRegister = false }) {
               width: '100%',
               background: 'transparent',
               border: 'none',
-              padding: '0.4rem 0',
+              padding: '0.35rem 0',
               color: 'var(--text-muted)',
               fontSize: '0.84rem',
               display: 'flex',
@@ -126,38 +131,37 @@ export default function Login({ initialRegister = false }) {
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
               <KeyRound size={15} color="var(--primary)" />
-              <span>Joining an assigned session or lab exam?</span>
+              <span>Have an assessment link or exam token?</span>
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', color: 'var(--primary)', fontWeight: 600, fontSize: '0.82rem' }}>
-              {showInviteDrawer ? 'Hide' : 'Enter Code'}
-              {showInviteDrawer ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+              {showInviteDrawer ? 'Hide' : 'Enter'}
+              {showInviteDrawer ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </span>
           </button>
 
           {showInviteDrawer && (
             <form
               onSubmit={handleOpenAssessmentLink}
-              className="fade-in"
               style={{
-                marginTop: '0.85rem',
-                padding: '0.9rem',
-                borderRadius: '12px',
-                background: 'var(--bg-main)',
+                marginTop: '0.75rem',
+                padding: '0.85rem',
+                borderRadius: '8px',
+                background: 'var(--bg-surface-2)',
                 border: '1px solid var(--border)',
               }}
             >
-              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: inviteError ? '0.4rem' : '0' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: inviteError ? '0.35rem' : '0' }}>
                 <input
                   type="text"
                   value={inviteInput}
                   onChange={(e) => { setInviteInput(e.target.value); setInviteError(''); }}
-                  placeholder="Paste invitation link or token..."
-                  style={{ flex: 1, padding: '0.55rem 0.75rem', fontSize: '0.84rem', borderRadius: '8px' }}
+                  placeholder="Paste /assess/... link or token"
+                  style={{ flex: 1, padding: '0.55rem 0.75rem', fontSize: '0.84rem' }}
                 />
                 <button
                   type="submit"
                   className="btn-primary"
-                  style={{ padding: '0.55rem 1rem', fontSize: '0.84rem', borderRadius: '8px', whiteSpace: 'nowrap' }}
+                  style={{ padding: '0.55rem 0.95rem', fontSize: '0.84rem', whiteSpace: 'nowrap' }}
                 >
                   Join <ArrowRight size={14} />
                 </button>
@@ -169,13 +173,12 @@ export default function Login({ initialRegister = false }) {
                 </span>
               )}
 
-              <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'block', marginTop: '0.45rem' }}>
-                🔒 Fast-track entry for students and candidates. No prior sign-up required.
+              <span style={{ fontSize: '0.74rem', color: 'var(--text-faint)', display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.45rem' }}>
+                <Lock size={12} color="var(--primary)" /> Fast-track claim for candidates and students.
               </span>
             </form>
           )}
         </div>
-
       </div>
     </div>
   )

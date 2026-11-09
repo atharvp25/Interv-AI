@@ -30,12 +30,17 @@ export default function GoogleSignInButton({ onSuccessRedirect, text = 'signin_w
             },
           });
 
+          // Clear previous render to prevent duplicate buttons
+          if (gsiContainerRef.current) {
+            gsiContainerRef.current.innerHTML = '';
+          }
+
           window.google.accounts.id.renderButton(gsiContainerRef.current, {
             theme: 'outline',
             size: 'large',
             width: 320,
             text,
-            shape: 'pill',
+            shape: 'rectangular',
           });
           setGsiLoaded(true);
         } catch (err) {
@@ -53,13 +58,12 @@ export default function GoogleSignInButton({ onSuccessRedirect, text = 'signin_w
     if (window.google?.accounts?.id) {
       window.google.accounts.id.prompt((notification) => {
         if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-          // If One Tap is suppressed, click the internal GSI button if present
           const btn = gsiContainerRef.current?.querySelector('div[role=button]');
           if (btn) btn.click();
         }
       });
     } else {
-      setError('Google Sign-In library is loading. Please check your internet connection or try again.');
+      setError('Google Sign-In is connecting. Please check your network or try again.');
     }
   };
 
@@ -69,14 +73,16 @@ export default function GoogleSignInButton({ onSuccessRedirect, text = 'signin_w
         <div style={{
           background: 'rgba(239, 68, 68, 0.1)',
           color: 'var(--error)',
-          padding: '0.65rem 0.9rem',
-          borderRadius: '8px',
+          border: '1px solid rgba(239, 68, 68, 0.25)',
+          padding: '0.6rem 0.85rem',
+          borderRadius: '6px',
           marginBottom: '0.85rem',
           display: 'flex',
           alignItems: 'center',
           gap: '0.4rem',
           fontSize: '0.82rem',
           width: '100%',
+          maxWidth: '320px',
         }}>
           <AlertCircle size={15} /> {error}
         </div>
@@ -94,38 +100,43 @@ export default function GoogleSignInButton({ onSuccessRedirect, text = 'signin_w
         }}
       />
 
-      {/* Fallback button if GSI container is still mounting */}
+      {/* Standard Official High-Contrast White Google Button */}
       {!gsiLoaded && (
         <button
           type="button"
           onClick={handleCustomClick}
-          className="btn-secondary"
+          className="btn-google-standard"
           style={{
             width: '100%',
             maxWidth: '320px',
-            padding: '0.65rem 1.25rem',
-            borderRadius: '24px',
+            height: '42px',
+            padding: '0 1.25rem',
+            borderRadius: '6px',
             fontWeight: 600,
-            fontSize: '0.9rem',
+            fontSize: '0.88rem',
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '0.65rem',
-            boxShadow: 'var(--shadow-sm)',
-            border: '1px solid var(--border)',
+            gap: '0.75rem',
+            background: '#FFFFFF',
+            color: '#1F2937',
+            border: '1px solid #D1D5DB',
+            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+            cursor: 'pointer',
+            transition: 'background-color 0.15s, border-color 0.15s',
           }}
         >
           <GoogleGIcon size={18} />
-          <span>Continue with Google</span>
+          <span>Sign in with Google</span>
         </button>
       )}
     </div>
   );
 }
 
-function GoogleGIcon({ size = 18 }) {
+export function GoogleGIcon({ size = 18 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
         fill="#4285F4"

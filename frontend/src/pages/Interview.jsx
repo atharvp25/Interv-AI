@@ -11,8 +11,11 @@ import {
   useLocalParticipant
 } from '@livekit/components-react'
 import '@livekit/components-styles'
-import { Activity, Shield, TerminalSquare, CheckCircle2, Clock } from 'lucide-react'
+import { Activity, Shield, TerminalSquare, CheckCircle2, Clock, Sparkles, Radio, Play, Check, Code2, Briefcase, Globe } from 'lucide-react'
 import { AuthContext } from '../context/AuthContext'
+import AnimatedOrb from '../components/ui/AnimatedOrb'
+import Confetti from '../components/ui/Confetti'
+import { PLATFORM_NAME } from '../brand'
 
 export default function Interview() {
   const [token, setToken] = useState('')
@@ -21,6 +24,7 @@ export default function Interview() {
   const [sessionTrack, setSessionTrack] = useState('tech')
   const [sessionLang, setSessionLang] = useState('hinglish')
   const [keywordsCount, setKeywordsCount] = useState(0)
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { token: jwtToken, user, isSuperAdmin } = useContext(AuthContext)
@@ -29,6 +33,19 @@ export default function Interview() {
   const [completedGuest, setCompletedGuest] = useState(false)
   const [isInterviewCompleted, setIsInterviewCompleted] = useState(false)
   const [liveTelemetry, setLiveTelemetry] = useState(null)
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setElapsedSeconds((s) => s + 1)
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const formatTimer = (sec) => {
+    const m = String(Math.floor(sec / 60)).padStart(2, '0')
+    const s = String(sec % 60).padStart(2, '0')
+    return `${m}:${s}`
+  }
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -94,14 +111,30 @@ export default function Interview() {
   if (completedGuest) {
     return (
       <div className="setup-layout">
-        <div className="glass-panel text-center animate-in" style={{ maxWidth: '480px', padding: '2.5rem' }}>
-          <h2 className="brand-font" style={{ color: 'var(--success)', marginBottom: '0.75rem' }}>
+        <Confetti active={true} />
+        <div className="pn-card pn-card-elevated text-center animate-in" style={{ maxWidth: '490px', padding: '2.75rem', borderRadius: '24px' }}>
+          <div
+            style={{
+              width: '68px',
+              height: '68px',
+              borderRadius: '50%',
+              background: 'rgba(22, 219, 147, 0.14)',
+              border: '1px solid rgba(22, 219, 147, 0.35)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1.25rem auto',
+            }}
+          >
+            <CheckCircle2 size={36} color="var(--success)" />
+          </div>
+          <h2 className="brand-font" style={{ color: 'var(--text-main)', marginBottom: '0.6rem', fontSize: '1.85rem', fontWeight: 800 }}>
             Assessment Completed!
           </h2>
-          <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-            Thank you for completing your voice assessment. Your evaluation has been saved and shared with your assessor.
+          <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '1.75rem', fontSize: '0.94rem' }}>
+            Thank you for completing your voice assessment on {PLATFORM_NAME}. Your evaluation has been saved and shared with your assessor.
           </p>
-          <button className="btn-primary" onClick={() => navigate('/')}>
+          <button className="pn-btn pn-btn-primary" onClick={() => navigate('/')}>
             Return to Home
           </button>
         </div>
@@ -112,10 +145,10 @@ export default function Interview() {
   if (error) {
     return (
       <div className="setup-layout">
-        <div className="glass-panel text-center animate-in">
-          <h2 style={{ color: 'var(--error)' }}>Connection Error</h2>
-          <p>{error}</p>
-          <button className="btn-secondary" onClick={() => navigate('/setup')} style={{ marginTop: '1.5rem' }}>
+        <div className="pn-card pn-card-elevated text-center animate-in" style={{ maxWidth: '480px', padding: '2.5rem', borderRadius: '24px' }}>
+          <h2 className="brand-font" style={{ color: 'var(--error)', marginBottom: '0.6rem' }}>Connection Error</h2>
+          <p style={{ color: 'var(--text-muted)' }}>{error}</p>
+          <button className="pn-btn pn-btn-outline" onClick={() => navigate('/setup')} style={{ marginTop: '1.5rem' }}>
             Return to Setup
           </button>
         </div>
@@ -126,10 +159,10 @@ export default function Interview() {
   if (!token || !url) {
     return (
       <div className="setup-layout">
-        <div className="text-center animate-in">
-          <Activity size={48} className="dz-icon-lg" style={{ animation: 'pulse-glow 1.5s infinite' }} />
-          <h3>Establishing Secure Connection...</h3>
-          <p style={{ color: 'var(--text-muted)' }}>Negotiating WebRTC parameters</p>
+        <div className="text-center animate-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+          <AnimatedOrb state="thinking" size={140} />
+          <h3 className="brand-font" style={{ fontSize: '1.4rem', margin: '0.5rem 0 0 0' }}>Establishing Secure WebRTC Studio...</h3>
+          <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.9rem' }}>Negotiating Gnani Prisma v3.0 &amp; Timbre v2.5 voice channels</p>
         </div>
       </div>
     )
@@ -171,43 +204,43 @@ export default function Interview() {
             position: 'fixed',
             top: '18px',
             right: '18px',
-            background: 'rgba(15, 23, 42, 0.94)',
-            backdropFilter: 'blur(12px)',
-            border: '1px solid rgba(239, 68, 68, 0.45)',
-            borderRadius: '12px',
-            padding: '0.85rem 1.15rem',
+            background: 'rgba(10, 10, 18, 0.92)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(124, 92, 255, 0.45)',
+            borderRadius: '16px',
+            padding: '0.9rem 1.2rem',
             zIndex: 999,
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
+            boxShadow: '0 16px 40px rgba(0, 0, 0, 0.6)',
             color: '#fff',
-            minWidth: '320px',
+            minWidth: '335px',
             pointerEvents: 'none',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.4rem' }}>
-            <span style={{ fontWeight: 700, fontSize: '0.86rem', color: '#f87171', display: 'flex', alignItems: 'center', gap: '5px' }}>
-              ⚡ Super Admin Latency HUD (Turn #{liveTelemetry.turn})
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.65rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.45rem' }}>
+            <span style={{ fontWeight: 600, fontSize: '0.82rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Activity size={14} color="var(--primary)" /> Super Admin Latency HUD (Turn #{liveTelemetry.turn})
             </span>
-            <span style={{ fontSize: '0.68rem', fontWeight: 700, background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', padding: '0.15rem 0.45rem', borderRadius: '10px', border: '1px solid rgba(16, 185, 129, 0.4)' }}>
+            <span style={{ fontSize: '0.68rem', fontWeight: 600, background: 'var(--primary-soft)', color: 'var(--primary)', padding: '0.15rem 0.5rem', borderRadius: '4px', border: '1px solid rgba(37, 99, 235, 0.25)' }}>
               LIVE
             </span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', textAlign: 'center' }}>
-            <div style={{ background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.25)', padding: '0.45rem 0.3rem', borderRadius: '8px' }}>
-              <div style={{ fontSize: '0.66rem', color: '#7dd3fc', marginBottom: '0.15rem' }}>STT</div>
-              <div style={{ fontWeight: 700, fontSize: '0.98rem', color: '#38bdf8' }}>{liveTelemetry.stt_ms}<span style={{ fontSize: '0.65rem' }}>ms</span></div>
+            <div style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border)', padding: '0.45rem 0.3rem', borderRadius: '6px' }}>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '0.15rem' }}>STT</div>
+              <div className="mono-font" style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-main)' }}>{liveTelemetry.stt_ms}<span style={{ fontSize: '0.62rem' }}>ms</span></div>
             </div>
-            <div style={{ background: 'rgba(192, 132, 252, 0.08)', border: '1px solid rgba(192, 132, 252, 0.25)', padding: '0.45rem 0.3rem', borderRadius: '8px' }}>
-              <div style={{ fontSize: '0.66rem', color: '#d8b4fe', marginBottom: '0.15rem' }}>LLM</div>
-              <div style={{ fontWeight: 700, fontSize: '0.98rem', color: '#c084fc' }}>{liveTelemetry.llm_ms}<span style={{ fontSize: '0.65rem' }}>ms</span></div>
+            <div style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border)', padding: '0.45rem 0.3rem', borderRadius: '6px' }}>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '0.15rem' }}>LLM</div>
+              <div className="mono-font" style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-main)' }}>{liveTelemetry.llm_ms}<span style={{ fontSize: '0.62rem' }}>ms</span></div>
             </div>
-            <div style={{ background: 'rgba(52, 211, 153, 0.08)', border: '1px solid rgba(52, 211, 153, 0.25)', padding: '0.45rem 0.3rem', borderRadius: '8px' }}>
-              <div style={{ fontSize: '0.66rem', color: '#86efac', marginBottom: '0.15rem' }}>TTS</div>
-              <div style={{ fontWeight: 700, fontSize: '0.98rem', color: '#34d399' }}>{liveTelemetry.tts_ms}<span style={{ fontSize: '0.65rem' }}>ms</span></div>
+            <div style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border)', padding: '0.45rem 0.3rem', borderRadius: '6px' }}>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '0.15rem' }}>TTS</div>
+              <div className="mono-font" style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-main)' }}>{liveTelemetry.tts_ms}<span style={{ fontSize: '0.62rem' }}>ms</span></div>
             </div>
-            <div style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.4)', padding: '0.45rem 0.3rem', borderRadius: '8px' }}>
-              <div style={{ fontSize: '0.66rem', color: '#fca5a5', marginBottom: '0.15rem' }}>Turnaround</div>
-              <div style={{ fontWeight: 700, fontSize: '0.98rem', color: '#f87171' }}>
-                {(liveTelemetry.total_e2e_ms / 1000).toFixed(2)}<span style={{ fontSize: '0.65rem' }}>s</span>
+            <div style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border)', padding: '0.45rem 0.3rem', borderRadius: '6px' }}>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '0.15rem' }}>E2E</div>
+              <div className="mono-font" style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--primary)' }}>
+                {(liveTelemetry.total_e2e_ms / 1000).toFixed(2)}<span style={{ fontSize: '0.62rem' }}>s</span>
               </div>
             </div>
           </div>
@@ -221,8 +254,8 @@ export default function Interview() {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(10, 15, 30, 0.94)',
-            backdropFilter: 'blur(10px)',
+            background: 'rgba(10, 10, 18, 0.94)',
+            backdropFilter: 'blur(14px)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -232,46 +265,47 @@ export default function Interview() {
             padding: '2rem',
           }}
         >
+          <Confetti active={true} />
           <div
             style={{
-              width: '74px',
-              height: '74px',
+              width: '64px',
+              height: '64px',
               borderRadius: '50%',
-              background: 'rgba(16, 185, 129, 0.15)',
+              background: 'rgba(16, 185, 129, 0.12)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               marginBottom: '1.25rem',
-              border: '2px solid rgba(16, 185, 129, 0.35)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
             }}
           >
-            <CheckCircle2 size={42} color="var(--success)" />
+            <CheckCircle2 size={36} color="var(--success)" />
           </div>
-          <h2 className="brand-font" style={{ fontSize: '2.1rem', color: '#fff', marginBottom: '0.4rem', fontWeight: 700 }}>
-            Interview Completed!
+          <h2 style={{ fontSize: '1.85rem', color: '#FFFFFF', marginBottom: '0.45rem', fontWeight: 700 }}>
+            Interview Completed
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.96rem', maxWidth: '440px', lineHeight: 1.55, marginBottom: '1.75rem' }}>
-            Your interview is over and your report has been successfully submitted. Thank you!
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', maxWidth: '440px', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+            Your assessment has concluded and your structured evaluation report has been submitted.
           </p>
           <div
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: '0.5rem',
-              padding: '0.5rem 1.15rem',
-              borderRadius: '20px',
-              background: 'rgba(37, 99, 235, 0.15)',
-              color: 'var(--primary)',
-              fontSize: '0.86rem',
-              fontWeight: 600,
-              border: '1px solid rgba(37, 99, 235, 0.3)',
+              padding: '0.45rem 1rem',
+              borderRadius: '6px',
+              background: 'var(--bg-surface-2)',
+              color: 'var(--text-muted)',
+              fontSize: '0.82rem',
+              fontWeight: 500,
+              border: '1px solid var(--border)',
             }}
           >
-            <Clock size={15} /> Leaving room in 2s...
+            <Clock size={14} color="var(--primary)" /> Leaving room in 2s...
           </div>
           <button
-            className="btn-primary"
-            style={{ marginTop: '1.25rem', fontSize: '0.9rem', padding: '0.55rem 1.4rem' }}
+            className="pn-btn pn-btn-primary"
+            style={{ marginTop: '1.25rem', fontSize: '0.92rem', padding: '0.65rem 1.5rem' }}
             onClick={() => {
               if (jwtToken) {
                 navigate('/dashboard')
@@ -289,10 +323,27 @@ export default function Interview() {
         {/* Interview Panel — full width by default, 50% when code editor opens */}
         <div className="interview-panel">
           <div className="interview-top-bar">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
               <ConnectionStatus />
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                <Shield size={14} color="var(--success)" /> Encrypted
+              <div
+                className="mono-font"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  fontSize: '0.76rem',
+                  fontWeight: 600,
+                  padding: '0.25rem 0.65rem',
+                  borderRadius: '999px',
+                  background: 'var(--bg-main)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-main)',
+                }}
+              >
+                <Clock size={12} color="var(--primary)" /> {formatTimer(elapsedSeconds)}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                <Shield size={13} color="var(--secondary)" /> E2E Encrypted
               </div>
               <div style={{
                 display: 'inline-flex',
@@ -300,32 +351,50 @@ export default function Interview() {
                 gap: '0.35rem',
                 fontSize: '0.75rem',
                 fontWeight: 600,
-                padding: '0.2rem 0.6rem',
-                borderRadius: '12px',
-                background: sessionTrack === 'tech' ? 'rgba(37, 99, 235, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-                color: sessionTrack === 'tech' ? 'var(--primary)' : 'var(--success)',
+                padding: '0.22rem 0.65rem',
+                borderRadius: '6px',
+                background: 'var(--bg-surface-2)',
+                color: 'var(--text-main)',
+                border: '1px solid var(--border)',
               }}>
-                {sessionTrack === 'tech' ? '💻 Tech Viva' : '💼 BDA Role-Play'}
+                {sessionTrack === 'tech' ? <Code2 size={13} color="var(--primary)" /> : <Briefcase size={13} color="var(--primary)" />}
+                <span>{sessionTrack === 'tech' ? 'Tech Viva' : 'BDA Role-Play'}</span>
               </div>
               <div style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.35rem',
                 fontSize: '0.75rem',
-                fontWeight: 500,
-                padding: '0.2rem 0.6rem',
-                borderRadius: '12px',
-                background: 'var(--bg-main)',
+                fontWeight: 600,
+                padding: '0.22rem 0.65rem',
+                borderRadius: '6px',
+                background: 'var(--bg-surface-2)',
                 color: 'var(--text-muted)',
                 border: '1px solid var(--border)',
               }}>
-                🌐 {sessionLang.toUpperCase()}
+                <Globe size={13} /> {sessionLang.toUpperCase()}
               </div>
+              {keywordsCount > 0 && (
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                  fontSize: '0.72rem',
+                  fontWeight: 600,
+                  padding: '0.2rem 0.6rem',
+                  borderRadius: '6px',
+                  background: 'var(--primary-soft)',
+                  color: 'var(--primary)',
+                  border: '1px solid rgba(37, 99, 235, 0.25)',
+                }}>
+                  <Sparkles size={11} /> {keywordsCount} Keyterms
+                </div>
+              )}
             </div>
             {isCodeEditorOpen && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 600, background: 'rgba(37, 99, 235, 0.08)', padding: '0.3rem 0.75rem', borderRadius: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', color: 'var(--primary)', fontWeight: 600, background: 'var(--primary-soft)', border: '1px solid rgba(37, 99, 235, 0.3)', padding: '0.3rem 0.75rem', borderRadius: '6px' }}>
                 <TerminalSquare size={14} />
-                Code Editor Active
+                Live IDE Active
               </div>
             )}
           </div>
@@ -358,14 +427,14 @@ function ConnectionStatus() {
   
   return (
     <div className="status-badge" style={{ 
-      color: isConnected ? 'var(--success)' : 'var(--error)',
-      background: isConnected ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-      borderColor: isConnected ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'
+      color: isConnected ? 'var(--secondary)' : 'var(--error)',
+      background: isConnected ? 'rgba(34, 211, 182, 0.12)' : 'rgba(255, 92, 124, 0.12)',
+      borderColor: isConnected ? 'rgba(34, 211, 182, 0.3)' : 'rgba(255, 92, 124, 0.3)'
     }}>
       <div style={{ 
         width: '8px', height: '8px', borderRadius: '50%', 
-        background: isConnected ? 'var(--success)' : 'var(--error)',
-        boxShadow: `0 0 10px ${isConnected ? 'var(--success)' : 'var(--error)'}`
+        background: isConnected ? 'var(--secondary)' : 'var(--error)',
+        boxShadow: `0 0 10px ${isConnected ? 'var(--secondary)' : 'var(--error)'}`
       }}></div>
       {isConnected ? 'Connected' : 'Connecting...'}
     </div>
@@ -375,33 +444,57 @@ function ConnectionStatus() {
 function AgentVisualizer() {
   const { state, audioTrack } = useVoiceAssistant()
   
-  let statusText = "Awaiting Input..."
-  if (state === 'speaking') statusText = "Agent Transmitting..."
-  else if (state === 'thinking') statusText = "Computing Response..."
-  else if (state === 'disconnected') statusText = "Agent Offline"
+  let statusText = "Listening — Speak Naturally..."
+  let statusColor = 'var(--secondary)'
+  if (state === 'speaking') {
+    statusText = "AI Interviewer Speaking..."
+    statusColor = 'var(--primary)'
+  } else if (state === 'thinking') {
+    statusText = "Synthesizing Response..."
+    statusColor = 'var(--pn-saffron)'
+  } else if (state === 'disconnected') {
+    statusText = "Agent Offline"
+    statusColor = 'var(--text-muted)'
+  }
 
   return (
-    <div style={{ textAlign: 'center' }}>
-      <div className={`orb-wrapper ${state === 'speaking' ? 'speaking' : 'idle'}`}>
-        <div className="orb-ring"></div>
-        <div className="orb-core"></div>
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 10 }}>
-          {audioTrack ? (
+    <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+        <AnimatedOrb state={state || 'listening'} size={210} showLabel={false} />
+        {audioTrack ? (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 10 }}>
             <BarVisualizer 
               trackRef={audioTrack}
               barCount={5}
               options={{ minHeight: 10 }}
-              style={{ width: '80px', height: '60px', color: 'white' }}
+              style={{ width: '80px', height: '56px', color: 'white' }}
             />
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
 
-      <div style={{ marginTop: '3rem' }}>
-        <h2 className="brand-font" style={{ fontSize: '1.5rem', marginBottom: '0.5rem', letterSpacing: '2px', textTransform: 'uppercase' }}>
-          Interviewer AI Core
+      <div style={{ marginTop: '2.2rem' }}>
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.45rem',
+            padding: '0.3rem 0.9rem',
+            borderRadius: '999px',
+            background: 'var(--bg-main)',
+            border: '1px solid var(--border)',
+            marginBottom: '0.6rem',
+          }}
+        >
+          <Radio size={13} color={statusColor} />
+          <span className="mono-font" style={{ fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: statusColor }}>
+            {state || 'ready'}
+          </span>
+        </div>
+        <h2 className="brand-font" style={{ fontSize: '1.45rem', marginBottom: '0.35rem', letterSpacing: '0.04em', textTransform: 'uppercase', fontWeight: 800 }}>
+          {PLATFORM_NAME} Voice Core
         </h2>
-        <p style={{ color: state === 'speaking' ? 'var(--primary)' : 'var(--text-muted)', fontWeight: '500', transition: 'color 0.3s' }}>
+        <p style={{ color: statusColor, fontWeight: 600, fontSize: '0.94rem', transition: 'color 0.3s', margin: 0 }}>
           {statusText}
         </p>
       </div>
@@ -425,7 +518,6 @@ function RoomEventListener({ onOpenEditor, onCloseEditor, onInterviewCompleted, 
           if (onTelemetry) onTelemetry(payload.data);
         } else if (payload.type === 'interview_completed') {
           if (onInterviewCompleted) onInterviewCompleted();
-          // Automatically disconnect the WebRTC room after 2.5 seconds
           setTimeout(() => {
             try {
               room.disconnect();
@@ -483,7 +575,6 @@ function CodeEditor() {
 
   const handleLangChange = (newLangId) => {
     setSelectedLang(newLangId);
-    // If editor has not been modified or is a default template, switch to new template
     const isDefaultTemplate = !code.trim() || Object.values(CODE_LANGUAGES).some((l) => l.template.trim() === code.trim());
     if (isDefaultTemplate) {
       setCode(CODE_LANGUAGES[newLangId].template);
@@ -516,53 +607,69 @@ function CodeEditor() {
   };
 
   const currentLangConfig = CODE_LANGUAGES[selectedLang] || CODE_LANGUAGES.py;
+  const lineCount = Math.max(12, code.split('\n').length);
 
   return (
     <div style={{ 
       display: 'flex',
       flexDirection: 'column',
       flex: 1,
-      background: '#0d1117',
+      background: '#0A0A12',
       overflow: 'hidden',
     }}>
-      {/* Terminal Header with Multi-Language Selector */}
+      {/* VS Code Studio Header */}
       <div style={{ 
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'space-between',
-        padding: '0.65rem 1rem', 
-        background: '#161b22',
-        borderBottom: '1px solid #30363d',
+        padding: '0.7rem 1.1rem', 
+        background: '#11111E',
+        borderBottom: '1px solid rgba(124, 92, 255, 0.2)',
         flexShrink: 0,
         flexWrap: 'wrap',
         gap: '0.5rem',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{ display: 'flex', gap: '6px' }}>
-            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ef4444' }}></div>
-            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#eab308' }}></div>
-            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#22c55e' }}></div>
+            <div style={{ width: '11px', height: '11px', borderRadius: '50%', background: '#FF5C7C' }}></div>
+            <div style={{ width: '11px', height: '11px', borderRadius: '50%', background: '#FFBE3D' }}></div>
+            <div style={{ width: '11px', height: '11px', borderRadius: '50%', background: '#16DB93' }}></div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#8b949e', fontSize: '0.82rem', fontWeight: 500, letterSpacing: '0.5px' }}>
-            <TerminalSquare size={14} />
+          <div
+            className="mono-font"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              color: '#F5F5FA',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              padding: '0.25rem 0.65rem',
+              borderRadius: '8px',
+              background: 'rgba(124, 92, 255, 0.14)',
+              border: '1px solid rgba(124, 92, 255, 0.28)',
+            }}
+          >
+            <TerminalSquare size={13} color="#7C5CFF" />
             <span>{currentLangConfig.filename}</span>
           </div>
         </div>
 
         {/* Language Selector Dropdown */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-          <span style={{ fontSize: '0.74rem', color: '#8b949e' }}>Language:</span>
+          <span style={{ fontSize: '0.74rem', color: '#9896B0' }}>Runtime:</span>
           <select
             value={selectedLang}
             onChange={(e) => handleLangChange(e.target.value)}
             style={{
-              background: '#21262d',
-              border: '1px solid #30363d',
-              color: '#e6edf3',
+              width: 'auto',
+              background: '#181828',
+              border: '1px solid rgba(124, 92, 255, 0.3)',
+              color: '#F5F5FA',
               fontSize: '0.78rem',
               fontWeight: 600,
-              padding: '0.25rem 0.6rem',
-              borderRadius: '6px',
+              padding: '0.3rem 0.7rem',
+              borderRadius: '8px',
               cursor: 'pointer',
               outline: 'none',
             }}
@@ -575,8 +682,25 @@ function CodeEditor() {
         </div>
       </div>
 
-      {/* Editor Area */}
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+      {/* Editor Area with Line Numbers */}
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex' }}>
+        <div
+          className="mono-font"
+          style={{
+            padding: '1.25rem 0.65rem 1.25rem 0.85rem',
+            background: '#0D0D18',
+            color: '#4E4C67',
+            fontSize: '0.84rem',
+            lineHeight: '1.6',
+            textAlign: 'right',
+            userSelect: 'none',
+            borderRight: '1px solid rgba(255,255,255,0.05)',
+          }}
+        >
+          {Array.from({ length: lineCount }).map((_, idx) => (
+            <div key={idx}>{idx + 1}</div>
+          ))}
+        </div>
         <textarea
           value={code}
           onChange={(e) => { setCode(e.target.value); setIsSubmitted(false); }}
@@ -587,10 +711,10 @@ function CodeEditor() {
             height: '100%',
             padding: '1.25rem',
             background: 'transparent',
-            color: '#e6edf3',
+            color: '#E6EDF3',
             border: 'none',
-            fontFamily: '"Fira Code", "JetBrains Mono", Consolas, monospace',
-            fontSize: '0.9rem',
+            fontFamily: '"JetBrains Mono", "Fira Code", Consolas, monospace',
+            fontSize: '0.88rem',
             lineHeight: '1.6',
             resize: 'none',
             outline: 'none',
@@ -613,34 +737,39 @@ function CodeEditor() {
 
       {/* Footer / Actions */}
       <div style={{ 
-        padding: '0.75rem 1rem', 
-        background: '#161b22', 
-        borderTop: '1px solid #30363d',
+        padding: '0.8rem 1.1rem', 
+        background: '#11111E', 
+        borderTop: '1px solid rgba(124, 92, 255, 0.2)',
         display: 'flex', 
         justifyContent: 'space-between',
         alignItems: 'center',
         flexShrink: 0,
       }}>
-        <span style={{ fontSize: '0.8rem', color: '#8b949e' }}>
-          {currentLangConfig.label} • UTF-8
+        <span className="mono-font" style={{ fontSize: '0.76rem', color: '#9896B0' }}>
+          {currentLangConfig.label} • UTF-8 • LiveKit DataChannel
         </span>
         <button 
           onClick={handleSubmit}
           disabled={isSubmitting || isSubmitted || !code.trim()}
           style={{ 
-            padding: '0.6rem 1.25rem', 
-            fontSize: '0.9rem',
-            fontWeight: 600,
-            background: (isSubmitting || isSubmitted) ? '#21262d' : 'linear-gradient(135deg, #238636 0%, #2ea043 100%)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
+            padding: '0.6rem 1.3rem', 
+            fontSize: '0.88rem',
+            fontWeight: 700,
+            background: (isSubmitting || isSubmitted)
+              ? 'rgba(34, 211, 182, 0.15)'
+              : 'linear-gradient(135deg, #7C5CFF 0%, #22D3B6 100%)',
+            color: (isSubmitting || isSubmitted) ? '#22D3B6' : 'white',
+            border: (isSubmitting || isSubmitted) ? '1px solid rgba(34, 211, 182, 0.4)' : 'none',
+            borderRadius: '10px',
             cursor: (isSubmitting || !code.trim()) ? 'not-allowed' : 'pointer',
             transition: 'all 0.2s ease',
-            boxShadow: (isSubmitting || isSubmitted || !code.trim()) ? 'none' : '0 4px 12px rgba(35, 134, 54, 0.3)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.45rem',
+            boxShadow: (isSubmitting || isSubmitted || !code.trim()) ? 'none' : '0 8px 24px -6px rgba(124, 92, 255, 0.55)',
           }}
         >
-          {isSubmitting ? 'Evaluating...' : isSubmitted ? '✓ Submitted — Waiting' : '▶ Run & Submit'}
+          {isSubmitting ? 'Evaluating...' : isSubmitted ? <><Check size={15} /> Submitted — Defend Aloud</> : <><Play size={14} /> Run &amp; Submit to AI</>}
         </button>
       </div>
     </div>

@@ -1,12 +1,15 @@
 import React, { useState, useRef, useContext, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import {
   UploadCloud, CheckCircle2, AlertTriangle, ArrowRight,
   ServerCog, Briefcase, Code, Globe, Link2, Copy, Sparkles,
-  UserCheck, ShieldCheck, BookOpen, GraduationCap, Users
+  UserCheck, ShieldCheck, BookOpen, GraduationCap, Users, Check
 } from 'lucide-react'
 import { AuthContext } from '../context/AuthContext'
 import LinkExpiryPicker from '../components/LinkExpiryPicker'
+import { useToast } from '../components/ui/Toast'
+import Badge from '../components/ui/Badge'
 
 const SUPPORTED_LANGUAGES = [
   { id: 'hinglish', label: 'Hinglish (Hindi + English)' },
@@ -31,7 +34,7 @@ const ROLE_TRACK_CONFIGS = {
       description: 'Assess algorithmic problem-solving, real-time Python implementation, and oral communication under pressure.',
       icon: Code,
       badge: 'Live Code Editor',
-      badgeColor: '#2563eb',
+      badgeColor: '#7C5CFF',
       defaultRoleTitle: 'Technical Software Engineer (SDE) Screening',
       presetTitle: 'Use 1-Click SDE Technical Screening Preset',
       backendTrack: 'tech',
@@ -49,7 +52,7 @@ Key Requirements:
       description: 'AI acts as a prospective client/CXO testing consultative selling, objection handling, pricing pushback, and deal closing.',
       icon: Briefcase,
       badge: 'Objection Role-Play',
-      badgeColor: '#10b981',
+      badgeColor: '#22D3B6',
       defaultRoleTitle: 'Enterprise BDA Sales & Pitch Screening',
       presetTitle: 'Use 1-Click BDA Sales Screening Preset',
       backendTrack: 'bda',
@@ -67,7 +70,7 @@ Key Requirements:
       description: 'Evaluate customer empathy, conflict de-escalation, cross-functional coordination, and operational problem solving.',
       icon: Users,
       badge: 'Situational Judgment',
-      badgeColor: '#f59e0b',
+      badgeColor: '#FF9F43',
       defaultRoleTitle: 'Operations & Customer Success Screening',
       presetTitle: 'Use 1-Click Operations & Support Screening Preset',
       backendTrack: 'bda',
@@ -87,7 +90,7 @@ Key Requirements:
       description: 'Students implement data structures in the live Python editor and orally defend their implementation, time complexity, and edge cases.',
       icon: Code,
       badge: 'Live Lab Editor',
-      badgeColor: '#2563eb',
+      badgeColor: '#7C5CFF',
       defaultRoleTitle: 'CS Practical Coding & Lab Oral Viva',
       presetTitle: 'Use 1-Click Python Lab Viva Preset',
       backendTrack: 'tech',
@@ -105,7 +108,7 @@ Lab Rubric:
       description: 'Rigorous academic oral examination evaluating theoretical mastery of algorithmic complexity, tree traversals, memory management, and OOP.',
       icon: BookOpen,
       badge: 'Oral Theory Viva',
-      badgeColor: '#8b5cf6',
+      badgeColor: '#A78BFA',
       defaultRoleTitle: 'Core CS & DSA Theory Oral Viva',
       presetTitle: 'Use 1-Click DSA & Theory Viva Preset',
       backendTrack: 'tech',
@@ -123,7 +126,7 @@ Viva Syllabus:
       description: 'Students defend their final year engineering capstone architecture, API schemas, design patterns, and database choices.',
       icon: GraduationCap,
       badge: 'Project Defense',
-      badgeColor: '#10b981',
+      badgeColor: '#22D3B6',
       defaultRoleTitle: 'Final Year Capstone Project Defense',
       presetTitle: 'Use 1-Click Capstone Defense Preset',
       backendTrack: 'tech',
@@ -143,7 +146,7 @@ Defense Criteria:
       description: 'Practice solving programming problems and defending your code aloud before your professor conducts the viva.',
       icon: Code,
       badge: 'Lab Exam Prep',
-      badgeColor: '#2563eb',
+      badgeColor: '#7C5CFF',
       defaultRoleTitle: 'Python Data Structures Lab Viva Practice',
       presetTitle: 'Use 1-Click Lab Viva Practice Preset',
       backendTrack: 'tech',
@@ -160,7 +163,7 @@ Focus Areas:
       description: 'Sharpen your theoretical concepts with interactive AI questioning in your preferred Indian language.',
       icon: BookOpen,
       badge: 'Oral Theory Prep',
-      badgeColor: '#8b5cf6',
+      badgeColor: '#A78BFA',
       defaultRoleTitle: 'CS Theory & DSA Viva Prep',
       presetTitle: 'Use 1-Click CS Theory Practice Preset',
       backendTrack: 'tech',
@@ -179,7 +182,7 @@ Focus Areas:
       description: 'Solve coding challenges in real-time and practice explaining algorithmic complexity to an AI interviewer.',
       icon: Code,
       badge: 'SDE Interview Prep',
-      badgeColor: '#2563eb',
+      badgeColor: '#7C5CFF',
       defaultRoleTitle: 'Software Engineer (SDE) Practice Interview',
       presetTitle: 'Use 1-Click SDE Technical Practice Preset',
       backendTrack: 'tech',
@@ -196,7 +199,7 @@ Practice Goals:
       description: 'Practice high-conviction product pitches and price objection handling in 10+ Indian languages against an AI buyer.',
       icon: Briefcase,
       badge: 'Sales Pitch Prep',
-      badgeColor: '#10b981',
+      badgeColor: '#22D3B6',
       defaultRoleTitle: 'BDA Sales Pitch & Objection Handling Prep',
       presetTitle: 'Use 1-Click BDA Sales Pitch Practice Preset',
       backendTrack: 'bda',
@@ -212,29 +215,27 @@ Practice Goals:
 export default function Setup() {
   const navigate = useNavigate()
   const fileInputRef = useRef(null)
+  const { toast } = useToast()
   const { token, effectiveRole, isAssessor, guestMode, triggerAuthRequired } = useContext(AuthContext)
 
-  // Current Role's available track cards (Recruiter sees ONLY recruiter tracks, Teacher sees ONLY teacher tracks)
   const currentRoleTracks =
     ROLE_TRACK_CONFIGS[effectiveRole] ||
     (isAssessor ? ROLE_TRACK_CONFIGS.recruiter : ROLE_TRACK_CONFIGS.candidate)
 
-  // Mode: Assessors can toggle between creating an assigned link or trying self-practice
   const [mode, setMode] = useState(isAssessor ? 'assign' : 'practice')
   const [selectedTrackId, setSelectedTrackId] = useState(currentRoleTracks[0]?.id || 'tech')
   const [language, setLanguage] = useState('hinglish')
   const [status, setStatus] = useState('idle') // idle, uploading, ready, error
   const [errorMessage, setErrorMessage] = useState('')
+  const [dragActive, setDragActive] = useState(false)
 
-  // Assessment / Session configuration fields
   const [roleTitle, setRoleTitle] = useState(currentRoleTracks[0]?.defaultRoleTitle || '')
   const [jdText, setJdText] = useState('')
   const [jdFileId, setJdFileId] = useState(null)
-  const [expiresHours, setExpiresHours] = useState(168) // 7 days default
+  const [expiresHours, setExpiresHours] = useState(168)
   const [maxAttempts, setMaxAttempts] = useState(1)
   const [shareWithTaker, setShareWithTaker] = useState(effectiveRole === 'teacher')
 
-  // Output generated token & secrets
   const [sessionId, setSessionId] = useState('')
   const [sessionSecret, setSessionSecret] = useState('')
   const [shareToken, setShareToken] = useState('')
@@ -242,7 +243,6 @@ export default function Setup() {
   const [copied, setCopied] = useState(false)
   const [assignedLinkInput, setAssignedLinkInput] = useState('')
 
-  // Sync state whenever role changes
   useEffect(() => {
     setMode(isAssessor ? 'assign' : 'practice')
     setShareWithTaker(effectiveRole === 'teacher')
@@ -269,7 +269,6 @@ export default function Setup() {
     if (status === 'ready') setStatus('idle')
   }
 
-  // Initialize either an Assigned Assessment (for Recruiter/Teacher) or a Practice Session
   const initializeContext = async (customJdText = null, customJdId = null, customTitle = null) => {
     if (guestMode || !token) {
       triggerAuthRequired('Sign in with Google is required to generate live assessment links or launch live voice interviews. Guest Mode is for UI exploration only.')
@@ -307,6 +306,7 @@ export default function Setup() {
         setShareToken(data.share_token)
         setKeywordsCount(data.keywords?.length || 0)
         setStatus('ready')
+        toast({ title: 'Assessment Link Generated', message: `Boosted ${data.keywords?.length || 0} domain keyterms`, type: 'success' })
       } else {
         const res = await fetch(`${getBaseUrl()}/api/sessions`, {
           method: 'POST',
@@ -327,6 +327,7 @@ export default function Setup() {
         setSessionSecret(data.session_secret || '')
         setKeywordsCount(data.keywords?.length || 0)
         setStatus('ready')
+        toast({ title: 'Practice Room Ready', message: `Injected ${data.keywords?.length || 0} keyterms into Gnani Prisma STT`, type: 'success' })
       }
     } catch (err) {
       setErrorMessage(err.message)
@@ -334,9 +335,7 @@ export default function Setup() {
     }
   }
 
-  // Custom File Upload
-  const handleFileChange = async (e) => {
-    const file = e.target.files?.[0]
+  const processUploadedFile = async (file) => {
     if (!file) return
 
     if (guestMode || !token) {
@@ -381,6 +380,18 @@ export default function Setup() {
     }
   }
 
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0]
+    await processUploadedFile(file)
+  }
+
+  const handleDrop = async (e) => {
+    e.preventDefault()
+    setDragActive(false)
+    const file = e.dataTransfer?.files?.[0]
+    await processUploadedFile(file)
+  }
+
   const handleStartPractice = () => {
     if (guestMode || !token) {
       triggerAuthRequired('Sign in with Google is required to launch a live practice interview.')
@@ -399,39 +410,69 @@ export default function Setup() {
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareableUrl)
     setCopied(true)
+    toast({ title: 'Link Copied to Clipboard', message: 'Ready to share with candidate or student.', type: 'success' })
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const steps = isAssessor && mode === 'assign'
+    ? ['1. Track & Role', '2. Language & Anti-Cheat', '3. Link Expiry', '4. Keyterm Ingestion']
+    : ['1. Select Track', '2. Language Selection', '3. Keyterm Ingestion & Launch']
+
   return (
-    <div style={{ maxWidth: '920px', margin: '2.5rem auto', padding: '0 1.5rem', width: '100%' }}>
+    <div style={{ maxWidth: '960px', margin: '2.5rem auto', padding: '0 1.5rem', width: '100%' }}>
       {/* Top Header */}
       <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-        <h1 className="brand-font" style={{ fontSize: '2.15rem', marginBottom: '0.4rem', fontWeight: 700 }}>
+        <div style={{ display: 'inline-flex', marginBottom: '0.75rem' }}>
+          <Badge tone="primary" pulse icon={<Sparkles size={14} />}>
+            Gnani Prisma v3.0 Keyterm Boosting Studio
+          </Badge>
+        </div>
+        <h1 className="brand-font" style={{ fontSize: 'clamp(1.85rem, 3.2vw, 2.35rem)', marginBottom: '0.45rem', fontWeight: 800 }}>
           {isAssessor
             ? effectiveRole === 'teacher'
               ? 'Configure Academic Viva Assessment'
               : 'Configure Candidate Screening Assessment'
             : 'Configure Self-Practice Voice Assessment'}
         </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.94rem' }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', maxWidth: '640px', margin: '0 auto' }}>
           {isAssessor
             ? effectiveRole === 'teacher'
               ? 'Select exam track, viva language, customizable link expiry, and auto-boost academic rubric keyterms.'
               : 'Select hiring track, interview language, customizable link expiry, and auto-boost technical keyterms.'
             : 'Select your practice track and train against AI voice prompts in 10+ Indian languages.'}
         </p>
+
+        {/* Stepper Pills */}
+        <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '0.5rem', marginTop: '1.25rem' }}>
+          {steps.map((step, i) => (
+            <span
+              key={step}
+              style={{
+                fontSize: '0.74rem',
+                fontWeight: 600,
+                padding: '0.3rem 0.75rem',
+                borderRadius: '999px',
+                background: status === 'ready' || i === 0 ? 'rgba(124, 92, 255, 0.14)' : 'var(--bg-surface)',
+                color: status === 'ready' || i === 0 ? 'var(--primary)' : 'var(--text-muted)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              {step}
+            </span>
+          ))}
+        </div>
       </div>
 
-      {/* For Students/Candidates: Quick Jump Bar for Teacher/Recruiter Links */}
+      {/* Quick Jump Bar for Students/Candidates */}
       {!isAssessor && (
         <div
-          className="panel animate-in"
+          className="pn-card"
           style={{
             padding: '1.25rem 1.5rem',
             marginBottom: '1.75rem',
-            borderRadius: '12px',
-            background: 'rgba(37, 99, 235, 0.04)',
-            border: '1px solid rgba(37, 99, 235, 0.2)',
+            borderRadius: '18px',
+            background: 'rgba(124, 92, 255, 0.06)',
+            border: '1px solid rgba(124, 92, 255, 0.28)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -440,7 +481,7 @@ export default function Setup() {
           }}
         >
           <div>
-            <strong style={{ fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <strong style={{ fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
               <Link2 size={16} color="var(--primary)" /> Have an Assigned Assessment Link from your {effectiveRole === 'student' ? 'Teacher' : 'Recruiter'}?
             </strong>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -462,9 +503,9 @@ export default function Setup() {
               value={assignedLinkInput}
               onChange={(e) => setAssignedLinkInput(e.target.value)}
               placeholder="Paste /assess/... link or token"
-              style={{ flex: 1, padding: '0.55rem 0.8rem', fontSize: '0.85rem' }}
+              style={{ flex: 1, padding: '0.6rem 0.85rem', fontSize: '0.85rem' }}
             />
-            <button type="submit" className="btn-primary" style={{ padding: '0.55rem 1rem', fontSize: '0.85rem', borderRadius: '10px' }}>
+            <button type="submit" className="pn-btn pn-btn-primary" style={{ padding: '0.6rem 1.1rem', fontSize: '0.85rem', borderRadius: '10px' }}>
               Enter Room
             </button>
           </form>
@@ -472,20 +513,20 @@ export default function Setup() {
       )}
 
       {/* Main Configuration Card */}
-      <div className="panel animate-in" style={{ padding: '2rem', borderRadius: '16px' }}>
-        {/* Mode Switcher for Assessors (Assign Link vs Self-Practice Test) */}
+      <div className="panel" style={{ padding: '2.2rem', borderRadius: '12px' }}>
+        {/* Mode Switcher for Assessors */}
         {isAssessor && (
-          <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '2rem', background: 'var(--bg-main)', padding: '0.4rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', gap: '0.6rem', marginBottom: '2rem', background: 'var(--bg-surface-2)', padding: '0.4rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
             <button
               type="button"
               onClick={() => { setMode('assign'); setStatus('idle'); }}
               style={{
                 flex: 1,
                 padding: '0.75rem 1rem',
-                borderRadius: '8px',
+                borderRadius: '6px',
                 border: 'none',
                 background: mode === 'assign' ? 'var(--primary)' : 'transparent',
-                color: mode === 'assign' ? '#fff' : 'var(--text-muted)',
+                color: mode === 'assign' ? '#ffffff' : 'var(--text-muted)',
                 fontWeight: 600,
                 fontSize: '0.9rem',
                 cursor: 'pointer',
@@ -505,10 +546,10 @@ export default function Setup() {
               style={{
                 flex: 1,
                 padding: '0.75rem 1rem',
-                borderRadius: '8px',
+                borderRadius: '6px',
                 border: 'none',
                 background: mode === 'practice' ? 'var(--primary)' : 'transparent',
-                color: mode === 'practice' ? '#fff' : 'var(--text-muted)',
+                color: mode === 'practice' ? '#ffffff' : 'var(--text-muted)',
                 fontWeight: 600,
                 fontSize: '0.9rem',
                 cursor: 'pointer',
@@ -524,14 +565,14 @@ export default function Setup() {
           </div>
         )}
 
-        {/* 1. Track Selector Cards — STRICT ROLE SEPARATION */}
-        <div style={{ marginBottom: '1.75rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-            <label style={{ fontWeight: 600, fontSize: '0.95rem' }}>
+        {/* 1. Track Selector Cards */}
+        <div style={{ marginBottom: '1.85rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
+            <label style={{ fontWeight: 700, fontSize: '0.96rem', margin: 0 }}>
               1. Select {effectiveRole === 'teacher' ? 'Viva Exam Track' : effectiveRole === 'recruiter' ? 'Hiring Track' : 'Practice Track'}
             </label>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              Tailored for <strong>{effectiveRole?.toUpperCase()}</strong>
+            <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+              Tailored for <strong style={{ color: 'var(--primary)' }}>{effectiveRole?.toUpperCase()}</strong>
             </span>
           </div>
 
@@ -544,32 +585,33 @@ export default function Setup() {
                   key={item.id}
                   onClick={() => handleSelectTrack(item)}
                   style={{
-                    padding: '1.2rem',
-                    borderRadius: '12px',
-                    border: `2px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}`,
-                    background: isSelected ? 'rgba(37, 99, 235, 0.05)' : 'var(--bg-surface)',
+                    padding: '1.15rem',
+                    borderRadius: '8px',
+                    border: isSelected ? '2px solid var(--primary)' : '1px solid var(--border)',
+                    background: isSelected ? 'var(--bg-elevated)' : 'var(--bg-surface-2)',
+                    boxShadow: isSelected ? 'var(--shadow-sm)' : 'none',
                     cursor: 'pointer',
-                    transition: 'all 0.15s ease',
+                    transition: 'border-color 0.15s, background-color 0.15s',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
                   }}
                 >
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
-                      <div style={{ padding: '0.5rem', borderRadius: '8px', background: `${item.badgeColor}18`, color: item.badgeColor }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
+                      <div style={{ padding: '0.5rem', borderRadius: '10px', background: `${item.badgeColor}18`, color: item.badgeColor }}>
                         <IconComp size={20} />
                       </div>
-                      <span style={{ fontSize: '0.72rem', fontWeight: 600, padding: '0.2rem 0.55rem', borderRadius: '10px', background: `${item.badgeColor}15`, color: item.badgeColor, border: `1px solid ${item.badgeColor}30` }}>
+                      <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: '999px', background: `${item.badgeColor}15`, color: item.badgeColor, border: `1px solid ${item.badgeColor}35` }}>
                         {item.badge}
                       </span>
                     </div>
-                    <h3 style={{ fontSize: '0.98rem', fontWeight: 600, margin: '0 0 0.25rem 0' }}>{item.title}</h3>
-                    <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.5rem' }}>
+                    <h3 className="brand-font" style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 0.25rem 0' }}>{item.title}</h3>
+                    <span style={{ fontSize: '0.76rem', color: 'var(--secondary)', fontWeight: 600, display: 'block', marginBottom: '0.5rem' }}>
                       {item.subtitle}
                     </span>
                   </div>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.45, margin: 0 }}>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.48, margin: 0 }}>
                     {item.description}
                   </p>
                 </div>
@@ -580,7 +622,7 @@ export default function Setup() {
 
         {/* 2. Assessment / Session Title */}
         <div style={{ marginBottom: '1.75rem' }}>
-          <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.45rem', fontSize: '0.92rem' }}>
+          <label style={{ display: 'block', fontWeight: 700, marginBottom: '0.45rem', fontSize: '0.92rem' }}>
             2. {effectiveRole === 'teacher' ? 'Viva Exam / Assignment Title' : effectiveRole === 'recruiter' ? 'Screening Role Title' : 'Practice Title'}
           </label>
           <input
@@ -592,16 +634,15 @@ export default function Setup() {
         </div>
 
         {/* 3. Interview Language & Strict Exam Controls */}
-        <div style={{ display: 'grid', gridTemplateColumns: isAssessor && mode === 'assign' ? '1fr 1fr' : '1fr', gap: '1rem', marginBottom: '1.75rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isAssessor && mode === 'assign' ? 'repeat(auto-fit, minmax(240px, 1fr))' : '1fr', gap: '1rem', marginBottom: '1.75rem' }}>
           <div>
-            <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.45rem', fontSize: '0.88rem' }}>
-              <Globe size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+            <label style={{ display: 'block', fontWeight: 700, marginBottom: '0.45rem', fontSize: '0.88rem' }}>
+              <Globe size={14} style={{ verticalAlign: 'middle', marginRight: '5px', color: 'var(--secondary)' }} />
               Interview Language
             </label>
             <select
               value={language}
               onChange={(e) => { setLanguage(e.target.value); if (status === 'ready') setStatus('idle'); }}
-              style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-surface)' }}
             >
               {SUPPORTED_LANGUAGES.map((lang) => (
                 <option key={lang.id} value={lang.id}>{lang.label}</option>
@@ -611,14 +652,13 @@ export default function Setup() {
 
           {isAssessor && mode === 'assign' && (
             <div>
-              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.45rem', fontSize: '0.88rem' }}>
-                <ShieldCheck size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+              <label style={{ display: 'block', fontWeight: 700, marginBottom: '0.45rem', fontSize: '0.88rem' }}>
+                <ShieldCheck size={14} style={{ verticalAlign: 'middle', marginRight: '5px', color: 'var(--primary)' }} />
                 Max Allowed Attempts (Anti-Cheat)
               </label>
               <select
                 value={maxAttempts}
                 onChange={(e) => { setMaxAttempts(e.target.value); if (status === 'ready') setStatus('idle'); }}
-                style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-surface)' }}
               >
                 <option value={1}>1 Attempt (Strict Single-Use Exam)</option>
                 <option value={2}>2 Attempts (Retake Allowed)</option>
@@ -628,7 +668,7 @@ export default function Setup() {
           )}
         </div>
 
-        {/* 4. Link Expiry Window — FULLY CUSTOMIZABLE (Zero Hardcoded Lock) */}
+        {/* 4. Link Expiry Window */}
         {isAssessor && mode === 'assign' && (
           <div style={{ marginBottom: '1.75rem' }}>
             <LinkExpiryPicker
@@ -641,12 +681,12 @@ export default function Setup() {
           </div>
         )}
 
-        {/* 5. Report Sharing Policy (Assessors Only) */}
+        {/* 5. Report Sharing Policy */}
         {isAssessor && mode === 'assign' && (
           <div
             style={{
-              padding: '0.9rem 1.1rem',
-              borderRadius: '10px',
+              padding: '1rem 1.2rem',
+              borderRadius: '14px',
               background: 'var(--bg-main)',
               border: '1px solid var(--border)',
               marginBottom: '1.75rem',
@@ -657,7 +697,7 @@ export default function Setup() {
             }}
           >
             <div>
-              <strong style={{ fontSize: '0.88rem', display: 'block' }}>
+              <strong style={{ fontSize: '0.9rem', display: 'block', marginBottom: '0.15rem' }}>
                 Release Evaluation Scorecard to {effectiveRole === 'teacher' ? 'Student' : 'Candidate'}?
               </strong>
               <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
@@ -670,14 +710,14 @@ export default function Setup() {
               type="checkbox"
               checked={shareWithTaker}
               onChange={(e) => { setShareWithTaker(e.target.checked); if (status === 'ready') setStatus('idle'); }}
-              style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+              style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: 'var(--primary)' }}
             />
           </div>
         )}
 
         {/* 6. Context & Gnani Prisma Keyterm Ingestion */}
         <div style={{ marginBottom: '1.75rem' }}>
-          <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.75rem', fontSize: '0.92rem' }}>
+          <label style={{ display: 'block', fontWeight: 700, marginBottom: '0.75rem', fontSize: '0.92rem' }}>
             {isAssessor && mode === 'assign' ? '6.' : '3.'} {effectiveRole === 'teacher' ? 'Viva Rubric / Syllabus Keyterm Ingestion' : effectiveRole === 'recruiter' ? 'Job Description / Rubric Keyterm Ingestion' : 'Practice Topic & Keyterm Ingestion'}
           </label>
 
@@ -685,9 +725,16 @@ export default function Setup() {
           <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
             <button
               type="button"
-              className="btn-secondary"
+              className="pn-btn pn-btn-outline"
               onClick={() => initializeContext()}
-              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.8rem', borderRadius: '10px' }}
+              style={{
+                flex: 1,
+                justifyContent: 'center',
+                padding: '0.85rem',
+                borderRadius: '12px',
+                borderColor: 'rgba(124, 92, 255, 0.35)',
+                background: 'rgba(124, 92, 255, 0.06)',
+              }}
             >
               <Sparkles size={16} color="var(--primary)" />
               {activeTrackConfig.presetTitle}
@@ -696,9 +743,19 @@ export default function Setup() {
 
           {/* Dropzone for Custom PDF / TXT Document */}
           <div
-            className={`dropzone ${status === 'uploading' ? 'uploading' : ''}`}
             onClick={() => fileInputRef.current?.click()}
-            style={{ cursor: 'pointer', padding: '1.4rem', textAlign: 'center', border: '2px dashed var(--border)', borderRadius: '12px' }}
+            onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+            onDragLeave={() => setDragActive(false)}
+            onDrop={handleDrop}
+            style={{
+              cursor: 'pointer',
+              padding: '1.6rem',
+              textAlign: 'center',
+              border: `2px dashed ${dragActive ? 'var(--secondary)' : status === 'ready' ? 'var(--success)' : 'var(--border)'}`,
+              borderRadius: '16px',
+              background: dragActive ? 'rgba(34, 211, 182, 0.06)' : 'var(--bg-main)',
+              transition: 'all 0.2s ease',
+            }}
           >
             <input
               type="file"
@@ -710,13 +767,13 @@ export default function Setup() {
 
             {status === 'idle' && (
               <>
-                <UploadCloud size={34} color="var(--primary)" style={{ marginBottom: '0.4rem' }} />
-                <h4 style={{ margin: '0 0 0.2rem 0', fontWeight: 600 }}>
+                <UploadCloud size={36} color="var(--primary)" style={{ marginBottom: '0.5rem' }} />
+                <h4 style={{ margin: '0 0 0.25rem 0', fontWeight: 700, fontSize: '0.96rem' }}>
                   {effectiveRole === 'teacher'
-                    ? 'Or upload custom Viva Rubric / Lab Question Sheet (PDF/TXT)'
+                    ? 'Or drag & drop custom Viva Rubric / Lab Question Sheet (PDF/TXT)'
                     : effectiveRole === 'recruiter'
-                    ? 'Or upload custom Job Description / Hiring Matrix (PDF/TXT)'
-                    : 'Or upload your target syllabus / JD document (PDF/TXT)'}
+                    ? 'Or drag & drop custom Job Description / Hiring Matrix (PDF/TXT)'
+                    : 'Or drag & drop your target syllabus / JD document (PDF/TXT)'}
                 </h4>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: 0 }}>
                   Extracts technical keyterms in &lt;1ms to boost Gnani Prisma v3.0 STT phonetic accuracy
@@ -726,75 +783,87 @@ export default function Setup() {
 
             {status === 'uploading' && (
               <>
-                <ServerCog size={34} color="var(--secondary)" className="spin" style={{ marginBottom: '0.4rem' }} />
-                <h4 style={{ margin: '0 0 0.2rem 0', fontWeight: 600 }}>Extracting Domain Keyterms & Locking Config...</h4>
+                <ServerCog size={36} color="var(--secondary)" className="spin" style={{ marginBottom: '0.5rem' }} />
+                <h4 style={{ margin: '0 0 0.2rem 0', fontWeight: 700 }}>Extracting Domain Keyterms & Locking Config...</h4>
               </>
             )}
 
             {status === 'ready' && (
               <>
-                <CheckCircle2 size={34} color="var(--success)" style={{ marginBottom: '0.4rem' }} />
-                <h4 style={{ margin: '0 0 0.2rem 0', fontWeight: 600, color: 'var(--success)' }}>
+                <CheckCircle2 size={36} color="var(--success)" style={{ marginBottom: '0.5rem' }} />
+                <h4 style={{ margin: '0 0 0.25rem 0', fontWeight: 700, color: 'var(--success)' }}>
                   {roleTitle} Initialized!
                 </h4>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', margin: 0 }}>
-                  ✅ Injected {keywordsCount} domain keyterms into Gnani Prisma v3.0 WebSocket headers
+                  Injected <strong>{keywordsCount}</strong> domain keyterms into Gnani Prisma v3.0 WebSocket headers
                 </p>
               </>
             )}
 
             {status === 'error' && (
               <>
-                <AlertTriangle size={34} color="var(--error)" style={{ marginBottom: '0.4rem' }} />
-                <h4 style={{ margin: '0 0 0.2rem 0', fontWeight: 600, color: 'var(--error)' }}>Initialization Failed</h4>
+                <AlertTriangle size={36} color="var(--error)" style={{ marginBottom: '0.5rem' }} />
+                <h4 style={{ margin: '0 0 0.2rem 0', fontWeight: 700, color: 'var(--error)' }}>Initialization Failed</h4>
                 <p style={{ color: 'var(--error)', fontSize: '0.8rem', margin: 0 }}>{errorMessage}</p>
               </>
             )}
           </div>
         </div>
 
-        {/* Action Area: Launch Practice vs Generated Link */}
+        {/* Action Area */}
         {status === 'ready' && mode === 'practice' && (
           <button
+            className="pn-btn pn-btn-primary"
+            onClick={handleStartPractice}
             className="btn-primary"
             onClick={handleStartPractice}
-            style={{ width: '100%', padding: '0.9rem', fontSize: '1rem', justifyContent: 'center', borderRadius: '10px' }}
+            style={{ width: '100%', padding: '0.85rem', fontSize: '0.96rem', justifyContent: 'center', borderRadius: '8px' }}
           >
             Launch Live Self-Practice Interview <ArrowRight size={18} />
           </button>
         )}
 
         {status === 'ready' && mode === 'assign' && isAssessor && (
-          <div style={{ background: 'var(--bg-main)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
-            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{
+              background: 'var(--bg-surface-2)',
+              padding: '1.25rem',
+              borderRadius: '8px',
+              border: '1px solid var(--border)',
+            }}
+          >
+            <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: 'var(--primary)', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
               ONE-CLAIMER TOKENIZED LINK (SEND TO {effectiveRole === 'teacher' ? 'STUDENT' : 'CANDIDATE'}):
             </label>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <input
                 type="text"
                 readOnly
                 value={shareableUrl}
-                style={{ flex: 1, padding: '0.6rem 0.8rem', fontSize: '0.85rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-surface)' }}
+                className="mono-font"
+                style={{ flex: 1, minWidth: '220px', padding: '0.65rem 0.85rem', fontSize: '0.84rem', borderRadius: '6px' }}
               />
               <button
                 className="btn-primary"
                 onClick={handleCopyLink}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap', padding: '0.6rem 1.1rem', borderRadius: '8px' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap', padding: '0.65rem 1.2rem', borderRadius: '6px' }}
               >
-                <Copy size={16} /> {copied ? 'Copied!' : 'Copy Link'}
+                {copied ? <Check size={16} /> : <Copy size={16} />} {copied ? 'Copied!' : 'Copy Link'}
               </button>
             </div>
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.55rem', marginBottom: 0 }}>
-              🔒 Protected by SHA-256 token hash. Expires in {expiresHours} hours ({expiresHours >= 24 && expiresHours % 24 === 0 ? `${expiresHours / 24} day(s)` : `${expiresHours} hr(s)`}). Once claimed, no other user can access it.
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.6rem', marginBottom: 0 }}>
+              Protected by SHA-256 token hash. Expires in {expiresHours} hours ({expiresHours >= 24 && expiresHours % 24 === 0 ? `${expiresHours / 24} day(s)` : `${expiresHours} hr(s)`}). Once claimed, no other user can access it.
             </p>
-          </div>
+          </motion.div>
         )}
 
         {status !== 'ready' && (
           <button
             className="btn-primary"
             disabled
-            style={{ width: '100%', opacity: 0.5, cursor: 'not-allowed', padding: '0.9rem', justifyContent: 'center', borderRadius: '10px' }}
+            style={{ width: '100%', opacity: 0.45, cursor: 'not-allowed', padding: '0.85rem', justifyContent: 'center', borderRadius: '8px' }}
           >
             Click Preset or Upload Document Above to Initialize
           </button>

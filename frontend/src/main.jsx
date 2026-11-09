@@ -3,14 +3,18 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import { AuthProvider } from './context/AuthContext'
+import { ToastProvider } from './components/ui/Toast.jsx'
 import './index.css'
-import '@livekit/components-styles';
+import '@livekit/components-styles'
+import './theme.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <App />
+        <ToastProvider>
+          <App />
+        </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>,

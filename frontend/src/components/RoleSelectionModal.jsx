@@ -1,15 +1,15 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import GoogleSignInButton from './GoogleSignInButton';
-import { GraduationCap, Briefcase, UserCheck, Code2, Sparkles, Lock, X } from 'lucide-react';
+import { GraduationCap, Briefcase, UserCheck, Code2, Lock, X, Check } from 'lucide-react';
+import { PLATFORM_NAME } from '../brand';
 
 const ROLE_OPTIONS = [
   {
     id: 'teacher',
     title: 'Teacher / Professor',
-    badge: 'Education Assessor',
+    category: 'Education Assessor',
     icon: GraduationCap,
-    color: '#2563eb',
     desc: 'Create practical coding & oral viva exams, share student links, and review graded viva reports.',
     orgLabel: 'College / University Name',
     orgPlaceholder: 'e.g. COEP Technological University',
@@ -17,32 +17,29 @@ const ROLE_OPTIONS = [
   {
     id: 'recruiter',
     title: 'Recruiter / Hiring Manager',
-    badge: 'Hiring Assessor',
+    category: 'Hiring Assessor',
     icon: Briefcase,
-    color: '#10b981',
-    desc: 'Create BDA sales role-play & tech screening links in 10+ Indian languages and view candidate scorecards.',
+    desc: 'Create BDA sales role-play & tech screening links in 10+ Indian languages and review candidate scorecards.',
     orgLabel: 'Company / Organization Name',
-    orgPlaceholder: 'e.g. Gnani.ai / TechCorp India',
+    orgPlaceholder: 'e.g. Enterprise Technologies Ltd.',
   },
   {
     id: 'student',
     title: 'Student',
-    badge: 'Education Taker',
+    category: 'Education Candidate',
     icon: Code2,
-    color: '#8b5cf6',
-    desc: 'Take assigned college coding/concept vivas and practice explaining your code aloud.',
+    desc: 'Take assigned college coding vivas and practice explaining algorithms and complexity aloud.',
     orgLabel: 'College / Institute Name',
     orgPlaceholder: 'e.g. VJTI Mumbai',
   },
   {
     id: 'candidate',
     title: 'Job Candidate',
-    badge: 'Hiring Taker',
+    category: 'Hiring Candidate',
     icon: UserCheck,
-    color: '#f59e0b',
-    desc: 'Take assigned company screening interviews and practice BDA sales pitches or technical interviews.',
+    desc: 'Take assigned company screening interviews and practice sales pitches or technical interviews.',
     orgLabel: 'Current Role / Target Domain (Optional)',
-    orgPlaceholder: 'e.g. BDA / Python Developer',
+    orgPlaceholder: 'e.g. SDE / BDA Specialist',
   },
 ];
 
@@ -53,16 +50,24 @@ export default function RoleSelectionModal() {
     guestMode,
     guestRole,
     showRoleModal,
+    setShowRoleModal,
     completeOnboarding,
     authPromptModal,
     closeAuthPrompt,
   } = useContext(AuthContext);
 
-  const [selectedRole, setSelectedRole] = useState(guestRole || 'teacher');
+  const [selectedRole, setSelectedRole] = useState(guestRole || 'recruiter');
   const [fullName, setFullName] = useState(user?.full_name || '');
   const [organization, setOrganization] = useState(user?.organization || '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  // Sync state whenever modal opens or guest role changes
+  useEffect(() => {
+    if (guestRole) {
+      setSelectedRole(guestRole);
+    }
+  }, [guestRole, showRoleModal]);
 
   useEffect(() => {
     if (user?.full_name) setFullName(user.full_name);
@@ -82,6 +87,7 @@ export default function RoleSelectionModal() {
         full_name: fullName.trim() || user?.full_name || 'Explorer',
         organization: organization.trim(),
       });
+      setShowRoleModal(false);
     } catch (err) {
       setError(err.message || 'Could not save role');
     } finally {
@@ -89,16 +95,18 @@ export default function RoleSelectionModal() {
     }
   };
 
+  const canDismiss = Boolean(guestMode && guestRole && !token);
+
   return (
     <>
-      {/* 1. Mandatory Role Selection Modal (Unskippable on first signup or Guest Mode entry) */}
+      {/* 1. Role Selection Modal */}
       {showRoleModal && (
         <div
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(15, 23, 42, 0.72)',
-            backdropFilter: 'blur(6px)',
+            background: 'rgba(11, 15, 23, 0.8)',
+            backdropFilter: 'blur(4px)',
             zIndex: 9999,
             display: 'flex',
             alignItems: 'center',
@@ -108,41 +116,48 @@ export default function RoleSelectionModal() {
           }}
         >
           <div
-            className="panel animate-in"
+            className="panel"
             style={{
               width: '100%',
-              maxWidth: '680px',
+              maxWidth: '640px',
               padding: '2rem',
-              borderRadius: '18px',
-              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.35)',
-              background: 'var(--bg-surface)',
+              borderRadius: '12px',
+              position: 'relative',
+              boxShadow: 'var(--shadow-lg)',
             }}
           >
-            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-              <span
+            {/* Dismiss button if user already has an active guest role */}
+            {canDismiss && (
+              <button
+                type="button"
+                onClick={() => setShowRoleModal(false)}
+                aria-label="Close modal"
                 style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  padding: '0.25rem 0.85rem',
-                  borderRadius: '20px',
-                  fontSize: '0.78rem',
-                  fontWeight: 600,
-                  background: 'rgba(37, 99, 235, 0.1)',
-                  color: 'var(--primary)',
-                  marginBottom: '0.6rem',
+                  position: 'absolute',
+                  top: '1.25rem',
+                  right: '1.25rem',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '4px',
                 }}
               >
-                <Sparkles size={14} />
-                {token ? 'Mandatory Account Setup (One-Time)' : 'Guest Mode'}
+                <X size={20} />
+              </button>
+            )}
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <span className="pn-badge pn-badge-primary" style={{ marginBottom: '0.6rem' }}>
+                {token ? 'Account Setup' : 'Guest Role Switcher'}
               </span>
-              <h2 className="brand-font" style={{ fontSize: '1.75rem', marginBottom: '0.35rem' }}>
-                {token ? 'Choose Your Role on IntervAI' : 'Select a Role to Preview IntervAI'}
+              <h2 style={{ fontSize: '1.5rem', marginBottom: '0.35rem', fontWeight: 700 }}>
+                {token ? `Select Your Workspace Role` : `Switch Preview Role`}
               </h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', margin: 0, lineHeight: 1.5 }}>
                 {token
-                  ? 'Your workspace, permissions, and dashboard will be tailored permanently to the role you select.'
-                  : 'Explore how IntervAI works for Recruiters, Teachers, Students, or Candidates. (Live voice sessions require Google Sign-In).'}
+                  ? `Your permissions and dashboard will be configured for the role you choose.`
+                  : `Select which persona dashboard you want to preview in Guest Mode.`}
               </p>
             </div>
 
@@ -151,10 +166,11 @@ export default function RoleSelectionModal() {
                 style={{
                   background: 'rgba(239, 68, 68, 0.1)',
                   color: 'var(--error)',
-                  padding: '0.75rem 1rem',
-                  borderRadius: '8px',
+                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                  padding: '0.65rem 0.9rem',
+                  borderRadius: '6px',
                   marginBottom: '1rem',
-                  fontSize: '0.85rem',
+                  fontSize: '0.84rem',
                 }}
               >
                 {error}
@@ -166,7 +182,7 @@ export default function RoleSelectionModal() {
                 style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-                  gap: '0.9rem',
+                  gap: '0.85rem',
                   marginBottom: '1.5rem',
                 }}
               >
@@ -179,42 +195,29 @@ export default function RoleSelectionModal() {
                       onClick={() => setSelectedRole(roleOpt.id)}
                       style={{
                         padding: '1.1rem',
-                        borderRadius: '12px',
-                        border: `2px solid ${isSelected ? roleOpt.color : 'var(--border)'}`,
-                        background: isSelected ? 'rgba(37, 99, 235, 0.04)' : 'var(--bg-main)',
+                        borderRadius: '8px',
+                        border: isSelected ? '2px solid var(--primary)' : '1px solid var(--border)',
+                        background: isSelected ? 'var(--bg-elevated)' : 'var(--bg-surface-2)',
                         cursor: 'pointer',
-                        transition: 'all 0.2s',
+                        transition: 'border-color 0.15s, background-color 0.15s',
+                        position: 'relative',
+                        boxShadow: isSelected ? 'var(--shadow-sm)' : 'none',
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.45rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                          <div
-                            style={{
-                              padding: '0.45rem',
-                              borderRadius: '8px',
-                              background: `${roleOpt.color}18`,
-                              color: roleOpt.color,
-                              display: 'flex',
-                            }}
-                          >
-                            <Icon size={20} />
-                          </div>
-                          <strong style={{ fontSize: '0.95rem' }}>{roleOpt.title}</strong>
+                          <Icon size={18} color={isSelected ? 'var(--primary)' : 'var(--text-muted)'} />
+                          <strong style={{ fontSize: '0.92rem', color: 'var(--text-main)' }}>
+                            {roleOpt.title}
+                          </strong>
                         </div>
-                        <span
-                          style={{
-                            fontSize: '0.68rem',
-                            fontWeight: 600,
-                            padding: '0.15rem 0.5rem',
-                            borderRadius: '10px',
-                            background: `${roleOpt.color}18`,
-                            color: roleOpt.color,
-                          }}
-                        >
-                          {roleOpt.badge}
-                        </span>
+                        {isSelected && (
+                          <span style={{ color: 'var(--primary)', display: 'inline-flex' }}>
+                            <Check size={16} />
+                          </span>
+                        )}
                       </div>
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.45, margin: 0 }}>
+                      <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.45, margin: 0 }}>
                         {roleOpt.desc}
                       </p>
                     </div>
@@ -225,17 +228,21 @@ export default function RoleSelectionModal() {
               {token && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                   <div>
-                    <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Your Full Name *</label>
+                    <label style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.35rem', display: 'block' }}>
+                      Your Full Name *
+                    </label>
                     <input
                       type="text"
                       required
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Enter your full name"
+                      placeholder="Enter full name"
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>{activeRoleMeta.orgLabel}</label>
+                    <label style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.35rem', display: 'block' }}>
+                      {activeRoleMeta.orgLabel}
+                    </label>
                     <input
                       type="text"
                       value={organization}
@@ -246,31 +253,41 @@ export default function RoleSelectionModal() {
                 </div>
               )}
 
-              <button
-                type="submit"
-                className="btn-primary"
-                disabled={saving}
-                style={{ width: '100%', padding: '0.9rem', fontSize: '1rem', justifyContent: 'center' }}
-              >
-                {saving
-                  ? 'Saving Role...'
-                  : token
-                  ? `Confirm & Continue as ${activeRoleMeta.title}`
-                  : `Explore Platform as ${activeRoleMeta.title}`}
-              </button>
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                {canDismiss && (
+                  <button
+                    type="button"
+                    onClick={() => setShowRoleModal(false)}
+                    className="btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={saving}
+                >
+                  {saving
+                    ? 'Saving...'
+                    : token
+                    ? `Continue as ${activeRoleMeta.title}`
+                    : `View as ${activeRoleMeta.title}`}
+                </button>
+              </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* 2. Auth Required Modal (Shown when a Guest Explorer clicks Conduct or Practice Interview) */}
+      {/* 2. Auth Required Modal */}
       {authPromptModal.open && (
         <div
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(15, 23, 42, 0.72)',
-            backdropFilter: 'blur(6px)',
+            background: 'rgba(11, 15, 23, 0.8)',
+            backdropFilter: 'blur(4px)',
             zIndex: 10000,
             display: 'flex',
             alignItems: 'center',
@@ -279,18 +296,20 @@ export default function RoleSelectionModal() {
           }}
         >
           <div
-            className="panel animate-in"
+            className="panel"
             style={{
               width: '100%',
-              maxWidth: '440px',
+              maxWidth: '420px',
               padding: '2rem',
-              borderRadius: '16px',
+              borderRadius: '12px',
               textAlign: 'center',
               position: 'relative',
+              boxShadow: 'var(--shadow-lg)',
             }}
           >
             <button
               onClick={closeAuthPrompt}
+              aria-label="Close"
               style={{
                 position: 'absolute',
                 top: '1rem',
@@ -299,42 +318,45 @@ export default function RoleSelectionModal() {
                 border: 'none',
                 cursor: 'pointer',
                 color: 'var(--text-muted)',
+                padding: '4px',
               }}
             >
-              <X size={20} />
+              <X size={18} />
             </button>
 
             <div
               style={{
-                width: '52px',
-                height: '52px',
-                borderRadius: '50%',
-                background: 'rgba(37, 99, 235, 0.1)',
+                width: '46px',
+                height: '46px',
+                borderRadius: '8px',
+                background: 'var(--primary-soft)',
                 color: 'var(--primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 margin: '0 auto 1rem auto',
+                border: '1px solid rgba(37, 99, 235, 0.25)',
               }}
             >
-              <Lock size={24} />
+              <Lock size={22} />
             </div>
 
-            <h3 className="brand-font" style={{ fontSize: '1.4rem', marginBottom: '0.5rem' }}>
-              Google Sign-In Required
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '0.45rem', fontWeight: 700 }}>
+              Sign In Required
             </h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: '1.5rem' }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', lineHeight: 1.5, marginBottom: '1.5rem' }}>
               {authPromptModal.reason}
             </p>
 
             <GoogleSignInButton />
 
             <button
+              type="button"
               onClick={closeAuthPrompt}
               className="btn-secondary"
-              style={{ marginTop: '1rem', width: '100%', justifyContent: 'center' }}
+              style={{ marginTop: '0.85rem', width: '100%' }}
             >
-              Continue Exploring in Guest Mode
+              Continue Exploring as Guest
             </button>
           </div>
         </div>
@@ -342,4 +364,3 @@ export default function RoleSelectionModal() {
     </>
   );
 }
-
