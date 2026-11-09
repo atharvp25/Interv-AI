@@ -6,10 +6,20 @@ import time
 
 def main():
     root_dir = os.path.dirname(os.path.abspath(__file__))
-    python_exe = sys.executable
+
+    # Auto-detect project virtual environment python if available
+    venv_python_win = os.path.join(root_dir, ".venv", "Scripts", "python.exe")
+    venv_python_posix = os.path.join(root_dir, ".venv", "bin", "python")
+    if os.path.exists(venv_python_win):
+        python_exe = venv_python_win
+    elif os.path.exists(venv_python_posix):
+        python_exe = venv_python_posix
+    else:
+        python_exe = sys.executable
 
     print("=" * 60)
     print("🚀 Starting IntervAI Ecosystem (Backend + Agent + Frontend)")
+    print(f"📦 Environment Python: {python_exe}")
     print("=" * 60)
 
     processes = []
@@ -50,10 +60,12 @@ def main():
         print("=" * 60 + "\n")
 
         # Keep parent script running and monitor children
+        reported_exits = set()
         while True:
             for name, p in processes:
-                if p.poll() is not None:
-                    print(f"⚠️ Process {name} exited unexpectedly with code {p.returncode}")
+                if p.poll() is not None and name not in reported_exits:
+                    print(f"⚠️ Process {name} exited with code {p.returncode}")
+                    reported_exits.add(name)
             time.sleep(1)
 
     except KeyboardInterrupt:

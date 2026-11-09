@@ -342,6 +342,10 @@ async def run_acceptance_tests():
         })
 
 
+        from server.database import client
+        client.close()
+
+
 if __name__ == "__main__":
     asyncio.run(run_acceptance_tests())
 

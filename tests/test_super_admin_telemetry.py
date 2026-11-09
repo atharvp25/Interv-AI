@@ -4,11 +4,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import asyncio
 from bson import ObjectId
-from server.database import db, users_collection
 from server.core.security import _serialize_user, create_access_token, SUPER_ADMIN_EMAILS
 from server.agent.worker import InterviewTelemetryTracker
 
-async def test_super_admin_and_telemetry():
+def test_super_admin_and_telemetry():
     print("Testing Super Admin recognition & Telemetry engine...")
 
     # 1. Test Super Admin identification for atharvep25@gmail.com
@@ -66,8 +65,11 @@ async def test_super_admin_and_telemetry():
     assert summary["avg_llm_ms"] == 750.0, f"Expected 750.0, got {summary['avg_llm_ms']}"
     print(f"✅ Telemetry Tracker precision verified: {summary}")
 
+    from server.database import client
+    client.close()
+
     print("🎉 ALL SUPER ADMIN & TELEMETRY TESTS PASSED!")
 
 if __name__ == "__main__":
-    asyncio.run(test_super_admin_and_telemetry())
+    test_super_admin_and_telemetry()
 
