@@ -195,7 +195,7 @@ class PrismaV3SpeechStream(gnani.SpeechStream):
                 data = json.loads(msg)
                 msg_type = data.get("type", "")
 
-                if msg_type == "transcript":
+                if msg_type in ("transcript", "final"):
                     self._mark_provider_progress()
                     text = data.get("text", "")
                     if not text:
@@ -214,6 +214,23 @@ class PrismaV3SpeechStream(gnani.SpeechStream):
                             ],
                         )
                     )
+
+                elif msg_type in ("partial", "interim", "hypothesis"):
+                    self._mark_provider_progress()
+                    text = data.get("text", "")
+                    if text:
+                        self._event_ch.send_nowait(
+                            stt.SpeechEvent(
+                                type=stt.SpeechEventType.INTERIM_TRANSCRIPT,
+                                alternatives=[
+                                    stt.SpeechData(
+                                        language=LanguageCode(self._opts.language),
+                                        text=text,
+                                        confidence=0.8,
+                                    )
+                                ],
+                            )
+                        )
 
                 elif msg_type in ("speech_start", "vad_start"):
                     self._mark_provider_progress()

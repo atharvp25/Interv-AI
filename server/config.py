@@ -31,7 +31,11 @@ GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 GNANI_API_KEY = os.environ.get("GNANI_API_KEY")
 
-# Primary model: lightweight, ultra-fast (0.76s), zero thinking overhead, high rate-limits
+# Groq LPU Ultra-Fast Voice Inference (< 150ms TTFT) with Gemini fallback
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "qwen/qwen3.8-27b")
+
+# Primary fallback model: lightweight, ultra-fast (0.76s), zero thinking overhead, high rate-limits
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash-lite")
 GEMINI_FALLBACK_MODELS = [
     "gemini-3.5-flash-lite",
