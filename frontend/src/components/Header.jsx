@@ -1,5 +1,5 @@
 import React, { useContext } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { LogOut, Eye, RefreshCw, LayoutDashboard, Plus, Mic } from 'lucide-react'
 import { AuthContext } from '../context/AuthContext'
 import { PLATFORM_NAME } from '../brand'
@@ -26,6 +26,7 @@ export default function Header() {
   } = useContext(AuthContext)
 
   const location = useLocation()
+  const navigate = useNavigate()
   const roleLabel = ROLE_LABELS[effectiveRole] || 'Candidate'
 
   const navLinkStyle = (active) => ({
@@ -163,7 +164,7 @@ export default function Header() {
 
             <button
               type="button"
-              onClick={openGuestRoleSwitcher}
+              onClick={() => navigate('/select-role')}
               className="btn-secondary"
               style={{ padding: '6px 12px', fontSize: '13px' }}
             >
@@ -179,7 +180,10 @@ export default function Header() {
           <>
             <button
               type="button"
-              onClick={startGuestMode}
+              onClick={() => {
+                sessionStorage.setItem('intervai_guest_mode', 'true');
+                navigate('/select-role');
+              }}
               className="btn-secondary"
             >
               <Eye size={16} strokeWidth={1.5} /> Guest preview

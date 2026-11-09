@@ -55,14 +55,14 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token]);
 
-  // Whenever user has needs_onboarding=true OR guestMode is active without a guestRole, force Role Modal open
+  // Whenever user has needs_onboarding=true OR guestMode is active without a guestRole, redirect to /select-role
   useEffect(() => {
     if (user && (user.needs_onboarding || !user.role)) {
-      setShowRoleModal(true);
+      navigate('/select-role');
     } else if (!token && guestMode && !guestRole) {
-      setShowRoleModal(true);
+      navigate('/select-role');
     }
-  }, [user, token, guestMode, guestRole]);
+  }, [user, token, guestMode, guestRole, navigate]);
 
   const fetchUser = async () => {
     try {
@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }) => {
         const data = await res.json();
         setUser(data);
         if (data.needs_onboarding || !data.role) {
-          setShowRoleModal(true);
+          navigate('/select-role');
         }
       } else {
         setToken(null);
@@ -98,7 +98,7 @@ export const AuthProvider = ({ children }) => {
     setUser(data.user);
     setToken(data.access_token);
     if (data.needs_onboarding || !data.user?.role) {
-      setShowRoleModal(true);
+      navigate('/select-role');
     }
     return data;
   };
@@ -116,7 +116,7 @@ export const AuthProvider = ({ children }) => {
     setUser(data.user);
     setToken(data.access_token);
     if (data.needs_onboarding || !data.user?.role) {
-      setShowRoleModal(true);
+      navigate('/select-role');
     }
     return data;
   };
@@ -134,7 +134,7 @@ export const AuthProvider = ({ children }) => {
     setUser(data.user);
     setToken(data.access_token);
     if (data.user?.needs_onboarding || !data.user?.role) {
-      setShowRoleModal(true);
+      navigate('/select-role');
     }
     return data;
   };
