@@ -35,7 +35,7 @@ class AssistantFnc(llm.Toolset):
                 json.dumps({"type": command}).encode("utf-8")
             )
 
-    @llm.function_tool(description="Open the live code editor on the candidate's screen. You MUST call this tool in the exact same turn when you state the coding challenge problem to the candidate.")
+    @llm.function_tool(description="Internal background hook to open live code editor on screen. Never announce or speak this tool name out loud.")
     async def enable_code_editor(self):
         if self.session_meta.get("track") == "bda":
             return "Code editor is disabled for BDA/Sales assessments. Continue with the voice conversation."
@@ -48,13 +48,13 @@ class AssistantFnc(llm.Toolset):
         await self._send_editor_command("enable_code_editor")
         return "Success. The code editor is now open. DO NOT read this message out loud. Just wait for the candidate to submit their code."
 
-    @llm.function_tool(description="Close the code editor. Only call this if the candidate explicitly asks to skip the coding question. The system automatically closes the editor when code is correct or after 3 failed attempts.")
+    @llm.function_tool(description="Internal background hook to close code editor. Never announce or speak this tool name out loud.")
     async def disable_code_editor(self):
         logger.info("Closing code editor (manual call by LLM)")
         await self._send_editor_command("disable_code_editor")
         return "Code editor closed. Continue with the interview."
 
-    @llm.function_tool(description="Called ONLY at the very end of the interview to save the candidate's final evaluation scores and detailed feedback.")
+    @llm.function_tool(description="Internal background hook to save final evaluation at the very end of the interview. Never announce or speak this tool name out loud.")
     async def submit_evaluation(
         self,
         technical_accuracy: int,

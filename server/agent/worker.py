@@ -31,10 +31,17 @@ if str(BASE_DIR) not in sys.path:
 from google import genai
 from google.genai import types
 from livekit import agents
-from livekit.agents import Agent, AgentServer, AgentSession, JobContext, room_io
-from livekit.plugins import noise_cancellation, silero, google, gnani, deepgram, cartesia
+from livekit.agents import Agent, AgentServer, AgentSession, JobContext, room_io, llm, APIConnectOptions
+from livekit.plugins import noise_cancellation, silero, google, gnani, openai
 
-from server.config import GEMINI_API_KEY, GNANI_API_KEY, GEMINI_MODEL, GEMINI_FALLBACK_MODELS
+from server.config import (
+    GEMINI_API_KEY,
+    GNANI_API_KEY,
+    GEMINI_MODEL,
+    GEMINI_FALLBACK_MODELS,
+    GROQ_API_KEY,
+    GROQ_MODEL,
+)
 from server.agent.gnani_prisma import PrismaV3STT, resolve_language_profile
 from server.agent.prompts import (
     get_interview_instructions,
@@ -49,6 +56,67 @@ from server.services.jd_parser import get_interview_session_context, load_jd
 logger = logging.getLogger(__name__)
 
 AGENT_NAME = "intervai-agent"
+
+
+import re
+
+def _sanitize_voice_chunk(text: str) -> str:
+    if not text:
+        return text
+    # 1. Strip bracketed annotations like [Calls enable_code_editor tool]
+    t = re.sub(r'\[.*?\]', '', text)
+    # 2. Strip bare tool names if leaked into spoken output
+    t = re.sub(r'\b(enable_code_editor|disable_code_editor|submit_evaluation)\b', '', t, flags=re.IGNORECASE)
+    # 3. Strip spoken question tag prefixes like 'Question #1:', '#tag 1:', 'Q1:'
+    t = re.sub(r'(?:^|\b|\s)(?:#tag\s*\d+|Question\s*#?\s*(?:tag\s*)?\d+|Q\d+)\s*[:.-]?', ' ', t, flags=re.IGNORECASE)
+    return t
+
+
+# ── RESILIENT VOICE LLM ENGINE (GROQ LPU WITH GEMINI FLASH-LITE FAILOVER) ────
+class ResilientVoiceStream(llm.LLMStream):
+    def __init__(self, parent_llm, primary_llm, fallback_llm, *, chat_ctx, **kwargs):
+        conn_opts = kwargs.get("conn_options") or APIConnectOptions()
+        tools = kwargs.get("tools") or []
+        super().__init__(parent_llm, chat_ctx=chat_ctx, tools=tools, conn_options=conn_opts)
+        self._parent = parent_llm
+        self._primary_llm = primary_llm
+        self._fallback_llm = fallback_llm
+        self._chat_ctx = chat_ctx
+        self._kwargs = kwargs
+
+    async def _run(self):
+        def _process_chunk(chunk):
+            if chunk.delta and chunk.delta.content:
+                chunk.delta.content = _sanitize_voice_chunk(chunk.delta.content)
+            return chunk
+
+        try:
+            primary_stream = self._primary_llm.chat(chat_ctx=self._chat_ctx, **self._kwargs)
+            async for chunk in primary_stream:
+                self._event_ch.send_nowait(_process_chunk(chunk))
+        except Exception as err:
+            logger.warning(
+                f"⚡ Groq LLM streaming failed ({err}). Seamlessly failing over to Google Gemini Flash-Lite..."
+            )
+            self._parent._active_provider = "gemini"
+            fallback_stream = self._fallback_llm.chat(chat_ctx=self._chat_ctx, **self._kwargs)
+            async for chunk in fallback_stream:
+                self._event_ch.send_nowait(_process_chunk(chunk))
+
+
+class ResilientVoiceLLM(llm.LLM):
+    """Voice LLM that uses Groq LPU for sub-200ms TTFT, with automatic failover to
+    Gemini Flash-Lite if Groq hits token rate limits (429) or connection errors."""
+    def __init__(self, primary: llm.LLM, fallback: llm.LLM):
+        super().__init__()
+        self._primary = primary
+        self._fallback = fallback
+        self._active_provider = "groq"
+
+    def chat(self, *, chat_ctx: llm.ChatContext, **kwargs) -> llm.LLMStream:
+        if self._active_provider == "gemini":
+            return self._fallback.chat(chat_ctx=chat_ctx, **kwargs)
+        return ResilientVoiceStream(self, self._primary, self._fallback, chat_ctx=chat_ctx, **kwargs)
 
 
 # ── REAL-TIME LATENCY TELEMETRY ENGINE ───────────────────────────────────────
@@ -112,9 +180,17 @@ class InterviewTelemetryTracker:
     async def record_agent_speaking(self):
         now = time.perf_counter()
         self.current_turn["tts_done_ts"] = now
-        llm_ts = self.current_turn["llm_done_ts"] or self.current_turn["stt_done_ts"]
-        if llm_ts > 0:
+        stt_ts = self.current_turn["stt_done_ts"] or self.current_turn["user_speech_end_ts"]
+        llm_ts = self.current_turn["llm_done_ts"]
+
+        if llm_ts and llm_ts > 0:
             self.current_turn["tts_ms"] = round((now - llm_ts) * 1000, 1)
+        elif stt_ts > 0:
+            # First audio chunk output before conversation_item_added event fires:
+            # Attribute TTFT (~60%) and TTFB (~40%) proportionally
+            elapsed = (now - stt_ts) * 1000
+            self.current_turn["llm_ms"] = round(elapsed * 0.6, 1)
+            self.current_turn["tts_ms"] = round(elapsed * 0.4, 1)
 
         start_ts = self.current_turn["user_speech_end_ts"]
         if start_ts > 0:
@@ -283,53 +359,62 @@ async def entrypoint(ctx: JobContext):
 
     genai_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
-    # Configure the speech pipeline: Gnani Prisma v3.0 STT -> Gemini LLM -> Gnani Timbre TTS
-    if GNANI_API_KEY:
-        stt_plugin = PrismaV3STT(
-            language=lang_profile["stt_lang"],
-            language_candidates=lang_profile["candidates"],
-            keywords=custom_keywords,
-            stream_format=lang_profile["format"],
-            model="prisma-v3.0",
-            api_key=GNANI_API_KEY,
-        )
-        tts_plugin = gnani.TTS(
-            voice=lang_profile["tts_voice"],
-            model="timbre-v2.5",
-            language=lang_profile["tts_lang"],
-            api_key=GNANI_API_KEY,
-        )
-    else:
-        stt_plugin = deepgram.STT()
-        tts_plugin = cartesia.TTS()
+    # ── SPEECH & ASR SELECTION (Gnani Prisma v3.0 Streaming STT) ───────────────
+    stt_plugin = PrismaV3STT(
+        language=lang_profile["stt_lang"],
+        language_candidates=lang_profile["candidates"],
+        keywords=custom_keywords[:30] if custom_keywords else None,
+        stream_format=lang_profile["format"],
+        model="prisma-v3.0",
+        api_key=GNANI_API_KEY,
+    )
+
+    # ── SPEECH SYNTHESIS SELECTION (Gnani Timbre Persistent WebSocket TTS) ─────
+    tts_plugin = gnani.TTS(
+        voice=lang_profile["tts_voice"],
+        model="timbre-v2.5",
+        language=lang_profile["tts_lang"],
+        api_key=GNANI_API_KEY,
+        synthesize_method="websocket",
+    )
 
     # Initialize telemetry tracker and bind to function toolset
     tracker = InterviewTelemetryTracker(room=ctx.room)
     fnc.set_telemetry_tracker(tracker)
 
-    # ── TOKEN & LATENCY OPTIMIZED GEMINI CONFIGURATION ──────────────────────────
-    # 1. Primary: 'gemini-3.5-flash-lite' — Ultra-light, 0.76s latency, high rate limits,
-    #    zero reasoning token bloat, fully supported for all new API keys.
-    # 2. max_output_tokens=1000 ensures ample headroom for structured JSON tool calls + spoken audio.
-    # 3. http_options timeout=60000 ensures multi-turn tool calling never hits 504 Deadline Exceeded.
-    # 4. thinking_config minimal eliminates reasoning latency.
-    # 5. preemptive_generation=False prevents rapid CancelledError aborts.
+    # ── VOICE LLM SELECTION (SOLUTION A: Groq LPU with Gemini Fallback) ─────────
+    gemini_llm = google.LLM(
+        model=GEMINI_MODEL,
+        api_key=GEMINI_API_KEY,
+        max_output_tokens=350,
+        temperature=0.5,
+        http_options=types.HttpOptions(timeout=60000),
+        thinking_config={"thinking_level": "minimal"},
+    )
+
+    if GROQ_API_KEY:
+        logger.info(f"⚡ Using Ultra-Fast Groq LPU engine ({GROQ_MODEL}) with automatic Gemini failover")
+        groq_llm = openai.LLM(
+            model=GROQ_MODEL,
+            api_key=GROQ_API_KEY,
+            base_url="https://api.groq.com/openai/v1",
+            temperature=0.5,
+        )
+        voice_llm = ResilientVoiceLLM(primary=groq_llm, fallback=gemini_llm)
+    else:
+        logger.info(f"Using Google Gemini engine ({GEMINI_MODEL}) for voice generation")
+        voice_llm = gemini_llm
+
+    # Fast conversational turn-taking: 250ms silence detection + preemptive synthesis
     session = AgentSession(
         stt=stt_plugin,
-        llm=google.LLM(
-            model=GEMINI_MODEL,
-            api_key=GEMINI_API_KEY,
-            max_output_tokens=1000,
-            temperature=0.6,
-            http_options=types.HttpOptions(timeout=60000),
-            thinking_config={"thinking_level": "minimal"},
-        ),
+        llm=voice_llm,
         tts=tts_plugin,
         vad=silero.VAD.load(),
         tools=[fnc],
-        min_endpointing_delay=0.6,
-        max_endpointing_delay=1.0,
-        preemptive_generation=False,
+        min_endpointing_delay=0.25,
+        max_endpointing_delay=0.45,
+        preemptive_generation=True,
     )
 
     conclusion_lock = asyncio.Lock()
@@ -398,7 +483,7 @@ async def entrypoint(ctx: JobContext):
             except Exception as fallback_err:
                 logger.error(f"Fallback evaluation error: {fallback_err}")
 
-    async def execute_room_conclusion(trigger_source: str = "assistant_phrase"):
+    async def execute_room_conclusion(trigger_source: str = "assistant_phrase", **kwargs):
         """Gracefully concludes the interview:
         1. Ensures evaluation is persisted to MongoDB.
         2. Waits for any in-flight assistant farewell speech to completely play out through candidate's speakers.
@@ -406,14 +491,15 @@ async def entrypoint(ctx: JobContext):
         4. Broadcasts 'interview_completed' DataChannel signal to candidate frontend.
         5. Allows candidate frontend 3s to show completion overlay before cleanly disconnecting WebRTC room.
         """
+        effective_source = kwargs.get("evaluation_source") or trigger_source
         nonlocal is_concluded
         async with conclusion_lock:
             if is_concluded:
-                logger.info(f"execute_room_conclusion already initiated for session {session_id}, ignoring duplicate (source={trigger_source})")
+                logger.info(f"execute_room_conclusion already initiated for session {session_id}, ignoring duplicate (source={effective_source})")
                 return
             is_concluded = True
 
-        logger.info(f"Initiating interview conclusion flow | session={session_id} | source={trigger_source}")
+        logger.info(f"Initiating interview conclusion flow | session={session_id} | source={effective_source}")
 
         # Step 1: Ensure evaluation scores and feedback are saved in DB
         if not fnc._submitted:
@@ -422,7 +508,7 @@ async def entrypoint(ctx: JobContext):
 
         # Step 2: Ensure farewell speech audio finishes playing completely
         try:
-            if trigger_source == "tool":
+            if effective_source == "tool":
                 logger.info("Waiting for LLM farewell speech to start...")
                 for _ in range(25):
                     if session.current_speech is not None or getattr(session, "agent_state", "") == "speaking":
@@ -436,7 +522,7 @@ async def entrypoint(ctx: JobContext):
                     logger.info("Farewell audio playout finished.")
                 except asyncio.TimeoutError:
                     logger.warning("Timed out waiting for speech playout, moving to completion signal.")
-            elif trigger_source != "assistant_phrase":
+            elif effective_source != "assistant_phrase":
                 farewell = get_random_farewell(language_key)
                 logger.info(f"Speaking official closing farewell: {farewell}")
                 try:
@@ -705,9 +791,8 @@ async def entrypoint(ctx: JobContext):
             pass
 
     # ── TOKEN OPTIMIZATION: JD Compaction ──────────────────────────────────────
-    # Compact excessively long JDs to max 1,500 chars to avoid re-sending thousands
-    # of input tokens on every multi-turn conversation step.
-    compact_jd = (jd_content[:1500] + "...") if len(jd_content) > 1500 else jd_content
+    # Compact JD to 350 chars max for ultra-lean turn prompts (<400 tokens per turn)
+    compact_jd = (jd_content[:350] + "...") if len(jd_content) > 350 else jd_content
 
     base_instructions = get_interview_instructions(
         track=track,
