@@ -197,8 +197,34 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Effective user object (either real authenticated user or simulated Guest Explorer)
+  const isSuperAdmin = Boolean(user?.is_super_admin);
   const effectiveRole = user?.role || (guestMode ? guestRole : null);
-  const isAssessor = effectiveRole === 'recruiter' || effectiveRole === 'teacher';
+  const isAssessor = isSuperAdmin || effectiveRole === 'recruiter' || effectiveRole === 'teacher';
+
+  const switchSuperAdminRole = async (targetRole) => {
+    if (!token || !isSuperAdmin) return;
+    try {
+      const res = await fetch(`${getBaseUrl()}/api/super-admin/switch-role`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ role: targetRole })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Failed to switch role');
+      if (data.access_token) {
+        setToken(data.access_token);
+        localStorage.setItem('token', data.access_token);
+      }
+      setUser(data.user);
+      return data.user;
+    } catch (err) {
+      console.error('Super Admin switch role error:', err);
+      throw err;
+    }
+  };
 
   return (
     <AuthContext.Provider
@@ -215,6 +241,8 @@ export const AuthProvider = ({ children }) => {
         guestRole,
         effectiveRole,
         isAssessor,
+        isSuperAdmin,
+        switchSuperAdminRole,
         startGuestMode,
         openGuestRoleSwitcher,
         showRoleModal,

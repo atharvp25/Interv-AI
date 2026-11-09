@@ -11,9 +11,10 @@ from server.database import users_collection
 security = HTTPBearer()
 optional_security = HTTPBearer(auto_error=False)
 
-VALID_ROLES = {"recruiter", "teacher", "candidate", "student"}
-ASSESSOR_ROLES = {"recruiter", "teacher"}
-TAKER_ROLES = {"candidate", "student"}
+VALID_ROLES = {"recruiter", "teacher", "candidate", "student", "super_admin"}
+ASSESSOR_ROLES = {"recruiter", "teacher", "super_admin"}
+TAKER_ROLES = {"candidate", "student", "super_admin"}
+SUPER_ADMIN_EMAILS = {"atharvep25@gmail.com"}
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -41,6 +42,8 @@ def create_access_token(data: dict) -> str:
 
 def _serialize_user(user: dict) -> dict:
     role = user.get("role")
+    email = (user.get("email") or "").strip().lower()
+    is_super_admin = (email in SUPER_ADMIN_EMAILS) or bool(user.get("is_super_admin")) or (role == "super_admin")
     return {
         "id": str(user["_id"]),
         "username": user["username"],
@@ -48,7 +51,8 @@ def _serialize_user(user: dict) -> dict:
         "full_name": user.get("full_name", user["username"]),
         "role": role,
         "organization": user.get("organization", ""),
-        "needs_onboarding": role not in VALID_ROLES,
+        "needs_onboarding": False if is_super_admin else (role not in VALID_ROLES),
+        "is_super_admin": is_super_admin,
     }
 
 
@@ -95,10 +99,10 @@ async def get_optional_user(
 
 
 async def require_assessor(current_user: dict = Depends(get_current_user)) -> dict:
-    """Enforce that the caller is an Assessor (Recruiter or Teacher)."""
-    if current_user.get("role") not in ASSESSOR_ROLES:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied: Only Recruiters and Teachers can perform this action.",
-        )
-    return current_user
+    """Enforce that the caller is an Assessor (Recruiter, Teacher, or Super Admin)."""
+    if current_user.get("is_super_admin") or current_user.get("role") in ASSESSOR_ROLES:
+        return current_user
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Access denied: Only Recruiters, Teachers, and Super Admins can perform this action.",
+    )

@@ -259,3 +259,33 @@ async def update_profile(
 @router.get("/me")
 async def get_me(current_user: dict = Depends(get_current_user)):
     return current_user
+
+
+@router.post("/super-admin/switch-role")
+async def switch_super_admin_role(
+    payload: dict = Body(...),
+    current_user: dict = Depends(get_current_user),
+):
+    """Allow Super Admin to dynamically switch active role to recruiter, teacher, candidate, student, or super_admin."""
+    if not current_user.get("is_super_admin"):
+        raise HTTPException(status_code=403, detail="Super Admin access required")
+
+    target_role = (payload.get("role") or "").strip().lower()
+    if target_role not in VALID_ROLES:
+        raise HTTPException(status_code=400, detail=f"Invalid target role: '{target_role}'")
+
+    await users_collection.update_one(
+        {"_id": ObjectId(current_user["id"])},
+        {"$set": {"role": target_role}},
+    )
+    db_user = await users_collection.find_one({"_id": ObjectId(current_user["id"])})
+    serialized = _serialize_user(db_user)
+    new_token = create_access_token(data={"sub": serialized["username"], "role": serialized["role"]})
+    return {
+        "success": True,
+        "access_token": new_token,
+        "token_type": "bearer",
+        "user": serialized,
+        "role": serialized["role"],
+    }
+

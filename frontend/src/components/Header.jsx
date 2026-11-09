@@ -19,6 +19,8 @@ export default function Header() {
     guestRole,
     effectiveRole,
     isAssessor,
+    isSuperAdmin,
+    switchSuperAdminRole,
     startGuestMode,
     openGuestRoleSwitcher,
   } = useContext(AuthContext)
@@ -85,8 +87,46 @@ export default function Header() {
               {isAssessor ? (effectiveRole === 'teacher' ? 'Create Viva' : 'Create Screening') : 'Start Practice'}
             </Link>
 
-            {/* Role Badge */}
-            {effectiveRole && (
+            {/* Role Badge or Super Admin Switcher */}
+            {isSuperAdmin ? (
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(245, 158, 11, 0.12))',
+                  border: '1px solid rgba(239, 68, 68, 0.35)',
+                  borderRadius: '20px',
+                  padding: '0.2rem 0.65rem',
+                }}
+                title="Super Admin: Full platform privileges + dynamic role switcher"
+              >
+                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#ef4444', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  ⚡ Super Admin:
+                </span>
+                <select
+                  value={effectiveRole || 'recruiter'}
+                  onChange={async (e) => {
+                    await switchSuperAdminRole(e.target.value);
+                  }}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    color: 'var(--text-main)',
+                    cursor: 'pointer',
+                    padding: '0.1rem 0.2rem',
+                    outline: 'none',
+                  }}
+                >
+                  <option value="recruiter" style={{ background: 'var(--bg-panel)' }}>💼 Recruiter</option>
+                  <option value="teacher" style={{ background: 'var(--bg-panel)' }}>🎓 Teacher</option>
+                  <option value="candidate" style={{ background: 'var(--bg-panel)' }}>👨‍💻 Candidate</option>
+                  <option value="student" style={{ background: 'var(--bg-panel)' }}>🧑‍🎓 Student</option>
+                </select>
+              </div>
+            ) : effectiveRole && (
               <span
                 style={{
                   fontSize: '0.78rem',
