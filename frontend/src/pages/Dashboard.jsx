@@ -1,8 +1,16 @@
 import React, { useState, useEffect, useContext } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { AuthContext } from '../context/AuthContext'
-import { AlertCircle, Eye, RefreshCw } from 'lucide-react'
-import { GoogleGIcon } from '../components/GoogleSignInButton'
+import {
+  AlertCircle,
+  RefreshCw,
+  Users,
+  Link2,
+  Award,
+  Plus,
+  BookOpen,
+  FileCheck,
+} from 'lucide-react'
 import RecruiterDashboardView from '../components/roles/RecruiterDashboardView'
 import TeacherDashboardView from '../components/roles/TeacherDashboardView'
 import StudentDashboardView from '../components/roles/StudentDashboardView'
@@ -14,7 +22,7 @@ const GUEST_SAMPLE_EVALUATIONS = {
     {
       _id: 'sample_eval_teacher_1',
       role_title: 'CS301 Python Data Structures & Viva — Batch A',
-      taker_name: 'Aarav Kulkarni (Sample Student)',
+      taker_name: 'Aarav Kulkarni',
       taker_email: 'aarav.k@college.edu',
       track: 'tech',
       language: 'hinglish',
@@ -26,11 +34,11 @@ const GUEST_SAMPLE_EVALUATIONS = {
         confidence: 8,
         depth: 9,
         completeness: 8,
-        overall_score: 8,
+        overall_score: 8.4,
       },
       feedback: {
         strengths: [
-          'Submitted clean O(n) hash-map solution in the live Python editor',
+          'Submitted O(n) hash-map solution in the live Python editor',
           'Orally explained time and space complexity accurately in Hinglish',
         ],
         areas_for_improvement: [
@@ -40,9 +48,37 @@ const GUEST_SAMPLE_EVALUATIONS = {
       },
     },
     {
+      _id: 'sample_eval_teacher_3',
+      role_title: 'CS301 Python Data Structures & Viva — Batch A',
+      taker_name: 'Rohan Deshmukh',
+      taker_email: 'rohan.d@college.edu',
+      track: 'tech',
+      language: 'mr-IN',
+      is_practice: false,
+      timestamp: new Date(Date.now() - 3600000 * 5).toISOString(),
+      scores: {
+        technical_accuracy: 7,
+        communication: 8,
+        confidence: 7,
+        depth: 7,
+        completeness: 7,
+        overall_score: 7.2,
+      },
+      feedback: {
+        strengths: [
+          'Correct iterative binary search implementation',
+          'Clear explanation of pointer bounds in Marathi',
+        ],
+        areas_for_improvement: [
+          'Missed integer overflow consideration on mid calculation',
+        ],
+        summary: 'Solid foundational grasp of searching algorithms and loop invariants.',
+      },
+    },
+    {
       _id: 'sample_eval_teacher_2',
-      role_title: 'Python & Data Structures Faculty Practice Run',
-      taker_name: 'Professor Preview Run',
+      role_title: 'Python & Data Structures Faculty Calibration Run',
+      taker_name: 'Faculty Calibration',
       track: 'tech',
       language: 'hinglish',
       is_practice: true,
@@ -53,12 +89,12 @@ const GUEST_SAMPLE_EVALUATIONS = {
         confidence: 9,
         depth: 10,
         completeness: 9,
-        overall_score: 9,
+        overall_score: 9.4,
       },
       feedback: {
-        strengths: ['Rigorous verification of edge cases and recursion depth'],
-        areas_for_improvement: ['None noted — benchmark caliber response'],
-        summary: 'Exemplary faculty test run of the live code editor and oral defense rubric.',
+        strengths: ['Verified edge cases and recursion depth limits'],
+        areas_for_improvement: ['None noted — benchmark calibration run'],
+        summary: 'Faculty verification run of the live code editor and oral defense rubric.',
       },
     },
   ],
@@ -66,7 +102,7 @@ const GUEST_SAMPLE_EVALUATIONS = {
     {
       _id: 'sample_eval_recruiter_1',
       role_title: 'Enterprise BDA & SaaS Sales Screening',
-      taker_name: 'Priya Deshmukh (Sample Candidate)',
+      taker_name: 'Priya Deshmukh',
       taker_email: 'priya.d@example.com',
       track: 'bda',
       language: 'hinglish',
@@ -78,23 +114,51 @@ const GUEST_SAMPLE_EVALUATIONS = {
         confidence: 9,
         depth: 8,
         completeness: 8,
-        overall_score: 8,
+        overall_score: 8.4,
       },
       feedback: {
         strengths: [
-          'Handled the quarterly budget-freeze objection empathetically with ROI breakdown',
-          'Natural Hinglish rapport and clear pilot call-to-action',
+          'Handled quarterly budget-freeze objection with clear ROI breakdown',
+          'Natural Hinglish rapport and structured pilot proposal',
         ],
         areas_for_improvement: [
           'Quantify customer acquisition metrics earlier in the pitch',
         ],
-        summary: 'High-conviction BDA pitch with strong objection handling under pressure.',
+        summary: 'Strong consultative pitch with composed objection handling.',
+      },
+    },
+    {
+      _id: 'sample_eval_recruiter_3',
+      role_title: 'Backend Software Engineer (SDE-1) Screening',
+      taker_name: 'Vikram Nair',
+      taker_email: 'vikram.n@example.com',
+      track: 'tech',
+      language: 'en-IN',
+      is_practice: false,
+      timestamp: new Date(Date.now() - 3600000 * 8).toISOString(),
+      scores: {
+        technical_accuracy: 6,
+        communication: 7,
+        confidence: 7,
+        depth: 6,
+        completeness: 6,
+        overall_score: 6.4,
+      },
+      feedback: {
+        strengths: [
+          'Clear verbal walkthrough of REST API pagination',
+        ],
+        areas_for_improvement: [
+          'Sub-optimal O(n²) nested loop in code editor submission',
+          'Needs stronger familiarity with database indexing',
+        ],
+        summary: 'Communicates clearly but requires deeper algorithmic optimization for SDE-1.',
       },
     },
     {
       _id: 'sample_eval_recruiter_2',
-      role_title: 'BDA Voice Screening AI Calibration Run',
-      taker_name: 'Recruiter Self-Test',
+      role_title: 'BDA Voice Screening Calibration Run',
+      taker_name: 'Recruiter Calibration',
       track: 'bda',
       language: 'hinglish',
       is_practice: true,
@@ -105,12 +169,12 @@ const GUEST_SAMPLE_EVALUATIONS = {
         confidence: 9,
         depth: 9,
         completeness: 9,
-        overall_score: 9,
+        overall_score: 9.0,
       },
       feedback: {
-        strengths: ['Smooth conversational pacing and structured value discovery'],
+        strengths: ['Smooth conversational pacing and structured discovery'],
         areas_for_improvement: ['Pace closing questions slightly more evenly'],
-        summary: 'Recruiter calibration session successfully validated AI objection triggers.',
+        summary: 'Recruiter calibration session validated objection triggers.',
       },
     },
   ],
@@ -118,7 +182,7 @@ const GUEST_SAMPLE_EVALUATIONS = {
     {
       _id: 'sample_eval_student_1',
       role_title: 'Python & Algorithms Lab Practice Viva',
-      taker_name: 'Guest Student Preview',
+      taker_name: 'Student Practice',
       track: 'tech',
       language: 'hinglish',
       is_practice: true,
@@ -129,18 +193,23 @@ const GUEST_SAMPLE_EVALUATIONS = {
         confidence: 7,
         depth: 8,
         completeness: 8,
-        overall_score: 8,
+        overall_score: 7.8,
       },
       feedback: {
-        strengths: ['Good grasp of recursion base cases and live code syntax'],
-        areas_for_improvement: ['Explain space complexity call-stack overhead more clearly'],
-        summary: 'Solid self-practice viva session. Ready for lab exam.',
+        strengths: [
+          'Correct binary search implementation in the Python editor',
+          'Clear explanation of loop invariants',
+        ],
+        areas_for_improvement: [
+          'State worst-case space complexity explicitly without prompting',
+        ],
+        summary: 'Solid viva practice run. Ready for upcoming lab examination.',
       },
     },
     {
       _id: 'sample_eval_student_2',
-      role_title: 'CS301 Midterm Lab Viva (Released by Prof. Sharma)',
-      taker_name: 'Guest Student Preview',
+      role_title: 'CS301 Mid-Semester Oral Viva (Released by Professor)',
+      taker_name: 'Student Preview',
       track: 'tech',
       language: 'hinglish',
       is_practice: false,
@@ -150,22 +219,22 @@ const GUEST_SAMPLE_EVALUATIONS = {
         technical_accuracy: 9,
         communication: 8,
         confidence: 8,
-        depth: 8,
+        depth: 9,
         completeness: 9,
-        overall_score: 8,
+        overall_score: 8.6,
       },
       feedback: {
-        strengths: ['Successfully resolved binary tree depth challenge in 4 minutes', 'Clear oral defense'],
-        areas_for_improvement: ['Review AVL rotations edge conditions'],
-        summary: 'Professor released your official midterm viva scorecard.',
+        strengths: ['Thorough explanation of AVL tree rotations and balance factors'],
+        areas_for_improvement: ['Review amortized analysis of dynamic arrays'],
+        summary: 'Strong performance on mid-semester viva.',
       },
     },
   ],
   candidate: [
     {
       _id: 'sample_eval_cand_1',
-      role_title: 'Enterprise BDA Sales Pitch Self-Prep',
-      taker_name: 'Guest Candidate Preview',
+      role_title: 'BDA Sales Pitch & Price Objection Practice',
+      taker_name: 'Candidate Practice',
       track: 'bda',
       language: 'hinglish',
       is_practice: true,
@@ -176,23 +245,23 @@ const GUEST_SAMPLE_EVALUATIONS = {
         confidence: 8,
         depth: 8,
         completeness: 8,
-        overall_score: 8,
+        overall_score: 8.4,
       },
       feedback: {
         strengths: [
-          'Strong consultative opening with relevant customer pain points',
-          'Confident Hinglish transitions and smooth price objection defense',
+          'Consultative opening with relevant customer pain points',
+          'Clear Hinglish transitions and price objection defense',
         ],
         areas_for_improvement: [
           'Address enterprise SLA and compliance terms earlier in the conversation',
         ],
-        summary: 'Competitive BDA mock interview performance with strong business empathy.',
+        summary: 'Strong BDA mock interview performance.',
       },
     },
     {
       _id: 'sample_eval_cand_2',
-      role_title: 'Fintech SDE-1 Technical Screening (Shared by HR Team)',
-      taker_name: 'Guest Candidate Preview',
+      role_title: 'Fintech SDE-1 Technical Screening (Shared by HR)',
+      taker_name: 'Candidate Preview',
       track: 'tech',
       language: 'en-IN',
       is_practice: false,
@@ -204,15 +273,22 @@ const GUEST_SAMPLE_EVALUATIONS = {
         confidence: 9,
         depth: 9,
         completeness: 8,
-        overall_score: 9,
+        overall_score: 8.6,
       },
       feedback: {
-        strengths: ['Clean LRU Cache implementation with O(1) get and put', 'Articulate time-space breakdown'],
+        strengths: ['Clean LRU Cache implementation with O(1) operations', 'Clear time-space breakdown'],
         areas_for_improvement: ['Discuss lock contention in multi-threaded environments'],
-        summary: 'Recruiter shared your technical screening scorecard. Passed to Round 2.',
+        summary: 'Recruiter shared your technical screening scorecard.',
       },
     },
   ],
+}
+
+const ROLE_LABELS = {
+  recruiter: 'Recruiter',
+  teacher: 'Teacher',
+  student: 'Student',
+  candidate: 'Candidate',
 }
 
 export default function Dashboard() {
@@ -231,8 +307,13 @@ export default function Dashboard() {
   const [assessments, setAssessments] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [activeTab, setActiveTab] = useState(isAssessor ? 'assigned' : 'practice')
 
   const getBaseUrl = () => (window.location.hostname === 'localhost' ? 'http://127.0.0.1:8000' : '')
+
+  useEffect(() => {
+    setActiveTab(isAssessor ? 'assigned' : 'practice')
+  }, [effectiveRole, isAssessor])
 
   useEffect(() => {
     if (!token && guestMode) {
@@ -306,7 +387,7 @@ export default function Dashboard() {
 
   const handleToggleShare = async (assessmentId, currentVal) => {
     if (guestMode || !token) {
-      triggerAuthRequired('Sign in with Google to manage live assessment sharing settings.')
+      triggerAuthRequired('Sign in with Google to update assessment sharing settings.')
       return
     }
     try {
@@ -359,7 +440,7 @@ export default function Dashboard() {
 
   const handleDeletePracticeReport = async (evalId) => {
     if (guestMode || !token) {
-      triggerAuthRequired('Sign in with Google to manage your practice reports.')
+      triggerAuthRequired('Sign in with Google to manage practice reports.')
       return
     }
     try {
@@ -381,145 +462,249 @@ export default function Dashboard() {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
     })
   }
 
+  const assignedCount = evaluations.filter((e) => !e.is_practice).length
+  const practiceCount = evaluations.filter((e) => e.is_practice).length
+  const releasedCount = evaluations.filter((e) => !e.is_practice && e.share_with_taker).length
+
+  const sidebarItems = isAssessor
+    ? [
+        {
+          id: 'assigned',
+          label: effectiveRole === 'teacher' ? 'Class roster & vivas' : 'Candidate comparison',
+          count: assignedCount,
+          icon: Users,
+        },
+        {
+          id: 'links',
+          label: effectiveRole === 'teacher' ? 'Assigned viva links' : 'Screening links',
+          count: assessments.length,
+          icon: Link2,
+        },
+        {
+          id: 'practice',
+          label: effectiveRole === 'teacher' ? 'Faculty test runs' : 'Calibration runs',
+          count: practiceCount,
+          icon: Award,
+        },
+      ]
+    : [
+        {
+          id: 'practice',
+          label: effectiveRole === 'student' ? 'Viva practice runs' : 'Mock interviews',
+          count: practiceCount,
+          icon: BookOpen,
+        },
+        {
+          id: 'released',
+          label: effectiveRole === 'student' ? 'Released course grades' : 'Shared scorecards',
+          count: releasedCount,
+          icon: FileCheck,
+        },
+      ]
+
+  const roleName = ROLE_LABELS[effectiveRole] || 'Student'
+
   return (
-    <div style={{ maxWidth: '1120px', margin: '2.5rem auto', padding: '0 1.5rem', width: '100%' }}>
-      {/* Guest Explorer Banner */}
-      {guestMode && !token && (
-        <div
-          className="panel"
-          style={{
-            background: 'var(--bg-surface-2)',
-            border: '1px solid var(--border)',
-            borderRadius: '8px',
-            padding: '0.9rem 1.25rem',
-            marginBottom: '1.75rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '1rem',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ padding: '0.45rem', borderRadius: '6px', background: 'var(--primary-soft)', color: 'var(--primary)', display: 'flex' }}>
-              <Eye size={18} />
-            </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                <strong style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>
-                  Guest Preview:
-                </strong>
-                <span className="pn-badge pn-badge-primary" style={{ textTransform: 'capitalize' }}>
-                  {effectiveRole || 'Explorer'}
-                </span>
-              </div>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0.15rem 0 0 0' }}>
-                You are viewing sample mock data for this role. To create real tokenized links or conduct live voice assessments, please sign in.
-              </p>
-            </div>
+    <div className="b2b-app-shell">
+      {/* Dark Charcoal Left Sidebar with Amber Active Indicator */}
+      <aside className="b2b-sidebar" aria-label="Workspace navigation">
+        <div style={{ padding: '20px 16px 16px 16px', borderBottom: '1px solid var(--sidebar-border)' }}>
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--sidebar-muted)', fontWeight: 500, marginBottom: '2px' }}>
+            Active workspace
           </div>
-          <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+          <div style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span>{roleName}</span>
+            {guestMode && !token && (
+              <span
+                style={{
+                  fontSize: 'var(--text-xs)',
+                  padding: '1px 6px',
+                  borderRadius: '4px',
+                  backgroundColor: 'var(--sidebar-hover)',
+                  color: 'var(--accent)',
+                  fontWeight: 500,
+                }}
+              >
+                Preview
+              </span>
+            )}
+          </div>
+          {user?.organization && (
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--sidebar-muted)', marginTop: '2px' }}>
+              {user.organization}
+            </div>
+          )}
+        </div>
+
+        <nav className="b2b-sidebar-nav" style={{ flex: 1 }}>
+          {sidebarItems.map((item) => {
+            const Icon = item.icon
+            const isActive = activeTab === item.id
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setActiveTab(item.id)}
+                className={`b2b-sidebar-item ${isActive ? 'active' : ''}`}
+              >
+                <Icon size={16} strokeWidth={1.5} />
+                <span style={{ flex: 1 }}>{item.label}</span>
+                <span
+                  className="mono-font"
+                  style={{
+                    fontSize: 'var(--text-xs)',
+                    color: isActive ? '#FFFFFF' : 'var(--sidebar-muted)',
+                  }}
+                >
+                  {item.count}
+                </span>
+              </button>
+            )
+          })}
+
+          <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--sidebar-border)' }}>
+            <button
+              type="button"
+              onClick={() => navigate('/setup')}
+              className="b2b-sidebar-item"
+              style={{ color: 'var(--accent)' }}
+            >
+              <Plus size={16} strokeWidth={1.5} />
+              <span>
+                {isAssessor
+                  ? effectiveRole === 'teacher'
+                    ? 'New viva assessment'
+                    : 'New screening link'
+                  : 'New practice session'}
+              </span>
+            </button>
+          </div>
+        </nav>
+
+        {/* Guest Mode Role Switcher in Sidebar Footer */}
+        {guestMode && !token && (
+          <div style={{ padding: '16px', borderTop: '1px solid var(--sidebar-border)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--sidebar-muted)', lineHeight: 1.4 }}>
+              Viewing sample {roleName.toLowerCase()} records.
+            </div>
             <button
               type="button"
               onClick={openGuestRoleSwitcher}
-              className="btn-secondary"
-              style={{ padding: '0.45rem 0.85rem', fontSize: '0.82rem' }}
+              className="btn-secondary pn-btn-sm"
+              style={{
+                width: '100%',
+                backgroundColor: 'var(--sidebar-hover)',
+                color: '#FFFFFF',
+                borderColor: '#44403C',
+              }}
             >
-              <RefreshCw size={13} /> Switch Role
+              <RefreshCw size={13} strokeWidth={1.5} />
+              <span>Switch role</span>
             </button>
             <Link
               to="/login"
-              className="btn-google-nav"
-              style={{ padding: '0.45rem 0.85rem', fontSize: '0.82rem' }}
+              className="btn-primary pn-btn-sm"
+              style={{ width: '100%', textAlign: 'center' }}
             >
-              <GoogleGIcon size={14} />
-              <span>Sign in with Google</span>
+              Sign in
             </Link>
           </div>
-        </div>
-      )}
+        )}
+      </aside>
 
-      {error && (
-        <div
-          style={{
-            background: 'rgba(255, 92, 124, 0.12)',
-            color: 'var(--error)',
-            border: '1px solid rgba(255, 92, 124, 0.3)',
-            padding: '1rem',
-            borderRadius: '14px',
-            marginBottom: '2rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-          }}
-        >
-          <AlertCircle size={18} /> {error}
-        </div>
-      )}
+      {/* Main Content Area on Warm Off-White Background */}
+      <div className="b2b-main-content">
+        {error && (
+          <div
+            style={{
+              backgroundColor: 'var(--danger-bg)',
+              color: 'var(--danger-text)',
+              border: '1px solid #FECACA',
+              padding: '12px 16px',
+              borderRadius: 'var(--radius-md)',
+              marginBottom: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: 'var(--text-sm)',
+            }}
+          >
+            <AlertCircle size={16} strokeWidth={1.5} />
+            <span>{error}</span>
+          </div>
+        )}
 
-      {loading ? (
-        <div style={{ display: 'grid', gap: '1.25rem' }}>
-          <SkeletonCard rows={3} />
-          <SkeletonCard rows={4} />
-        </div>
-      ) : (
-        <>
-          {effectiveRole === 'recruiter' && (
-            <RecruiterDashboardView
-              user={user}
-              evaluations={evaluations}
-              assessments={assessments}
-              token={token}
-              onToggleShare={handleToggleShare}
-              onToggleRevoke={handleToggleRevoke}
-              onDeletePractice={handleDeletePracticeReport}
-              formatDate={formatDate}
-              getBaseUrl={getBaseUrl}
-            />
-          )}
+        {loading ? (
+          <div style={{ display: 'grid', gap: '16px' }}>
+            <SkeletonCard lines={3} />
+            <SkeletonCard lines={5} />
+          </div>
+        ) : (
+          <>
+            {effectiveRole === 'recruiter' && (
+              <RecruiterDashboardView
+                user={user}
+                evaluations={evaluations}
+                assessments={assessments}
+                token={token}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                onToggleShare={handleToggleShare}
+                onToggleRevoke={handleToggleRevoke}
+                onDeletePractice={handleDeletePracticeReport}
+                formatDate={formatDate}
+                getBaseUrl={getBaseUrl}
+              />
+            )}
 
-          {effectiveRole === 'teacher' && (
-            <TeacherDashboardView
-              user={user}
-              evaluations={evaluations}
-              assessments={assessments}
-              token={token}
-              onToggleShare={handleToggleShare}
-              onToggleRevoke={handleToggleRevoke}
-              onDeletePractice={handleDeletePracticeReport}
-              formatDate={formatDate}
-              getBaseUrl={getBaseUrl}
-            />
-          )}
+            {effectiveRole === 'teacher' && (
+              <TeacherDashboardView
+                user={user}
+                evaluations={evaluations}
+                assessments={assessments}
+                token={token}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                onToggleShare={handleToggleShare}
+                onToggleRevoke={handleToggleRevoke}
+                onDeletePractice={handleDeletePracticeReport}
+                formatDate={formatDate}
+                getBaseUrl={getBaseUrl}
+              />
+            )}
 
-          {effectiveRole === 'candidate' && (
-            <CandidateDashboardView
-              user={user}
-              evaluations={evaluations}
-              token={token}
-              onDeletePractice={handleDeletePracticeReport}
-              formatDate={formatDate}
-              getBaseUrl={getBaseUrl}
-            />
-          )}
+            {effectiveRole === 'candidate' && (
+              <CandidateDashboardView
+                user={user}
+                evaluations={evaluations}
+                token={token}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                onDeletePractice={handleDeletePracticeReport}
+                formatDate={formatDate}
+                getBaseUrl={getBaseUrl}
+              />
+            )}
 
-          {(effectiveRole === 'student' || (!['recruiter', 'teacher', 'candidate'].includes(effectiveRole))) && (
-            <StudentDashboardView
-              user={user}
-              evaluations={evaluations}
-              token={token}
-              onDeletePractice={handleDeletePracticeReport}
-              formatDate={formatDate}
-              getBaseUrl={getBaseUrl}
-            />
-          )}
-        </>
-      )}
+            {(effectiveRole === 'student' ||
+              !['recruiter', 'teacher', 'candidate'].includes(effectiveRole)) && (
+              <StudentDashboardView
+                user={user}
+                evaluations={evaluations}
+                token={token}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                onDeletePractice={handleDeletePracticeReport}
+                formatDate={formatDate}
+                getBaseUrl={getBaseUrl}
+              />
+            )}
+          </>
+        )}
+      </div>
     </div>
   )
 }
