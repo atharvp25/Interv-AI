@@ -53,7 +53,7 @@ class AssistantFnc(llm.Toolset):
         await self._send_editor_command("disable_code_editor")
         return "Code editor closed. Continue with the interview."
 
-    @llm.function_tool(description="Internal background hook to save final evaluation at the very end of the interview. Never announce or speak this tool name out loud.")
+    @llm.function_tool(description="Internal background hook to save final evaluation scorecard at the conclusion of the interview. Never announce or speak this tool name out loud.")
     async def submit_evaluation(
         self,
         technical_accuracy: int,
@@ -66,6 +66,19 @@ class AssistantFnc(llm.Toolset):
         areas_for_improvement: list[str],
         summary: str
     ):
+        """Submit the final candidate assessment scorecard across 6 rubric dimensions.
+
+        Args:
+            technical_accuracy: Domain Knowledge & Subject Competence (1-10). Grade accuracy of domain facts, terminology, formulas, diagnostic steps, legal precedents, or code syntax in the candidate's stream. DO NOT default to a median 5; calibrate strictly (7-10 for correct knowledge, 5-6 for partially correct, 1-4 for incorrect or missing).
+            communication: Articulation & Verbal Clarity (1-10). Fluency, structure of spoken responses in chosen language.
+            confidence: Composure & Demeanor (1-10). Poise under inquiry and defense.
+            depth: Analytical Depth & Reasoning (1-10). Explaining 'why', edge cases, and principles.
+            completeness: Thoroughness (1-10). Answering all parts of questions without evasion.
+            overall_score: Composite overall score (1-10).
+            strengths: 2-3 specific observed domain strengths.
+            areas_for_improvement: 1-2 actionable growth suggestions.
+            summary: 2-3 sentence executive evaluation summary.
+        """
         if self._submitted:
             logger.info(f"Evaluation already submitted for user: {self.username}, skipping duplicate.")
             return "Evaluation was already submitted. Just thank the candidate and say goodbye."

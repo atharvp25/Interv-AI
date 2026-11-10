@@ -463,11 +463,18 @@ async def entrypoint(ctx: JobContext):
                 transcript = "\n".join(messages[-25:])
                 logger.info(f"Compiling automated fallback assessment for {taker_username} ({len(user_msgs)} user turns)...")
                 eval_prompt = (
-                    f"You are an expert academic/industry examiner scoring this {track.upper()} assessment for role '{role_title}'.\n"
+                    f"You are an expert academic and industry examiner scoring this assessment for role '{role_title}'.\n"
                     f"Discipline: {discipline} | Specialization: {specialization}\n"
                     f"Candidate Name: {taker_name}\n"
                     f"Interview Transcript:\n{transcript}\n\n"
-                    f"Score the candidate objectively (1-10) and return ONLY a valid JSON object matching this schema:\n"
+                    f"Score the candidate objectively (1-10) using this rigorous rubric across the 6 axes:\n"
+                    f"- technical_accuracy (Domain Knowledge & Subject Competence in {discipline}): Grade the correctness of their domain facts, theoretical understanding, and specific subject reasoning. DO NOT default to 5. If their responses were correct and relevant, award 7-10. If partially correct, award 6-7. If they made clear factual errors, award 3-5. If it was a short test session (<3 answers), calibrate based on the attempted answers.\n"
+                    f"- depth (Analytical Depth & Critical Thinking): Did they explain the 'why' behind their answers and address core principles/edge cases? (1-10)\n"
+                    f"- communication (Verbal Articulation & Fluency): Clarity of speech, structured delivery, and effective communication. (1-10)\n"
+                    f"- confidence (Professional Composure): Poise, directness, and composure under examination. (1-10)\n"
+                    f"- completeness (Thoroughness): Did they provide comprehensive, well-rounded answers to the questions asked? (1-10)\n"
+                    f"- overall_score (Composite Grade): Weighted objective grade reflecting their overall oral defense and domain grasp. (1-10)\n\n"
+                    f"Return ONLY a valid JSON object matching this schema:\n"
                     f"{{\n"
                     f'  "technical_accuracy": int (1-10),\n'
                     f'  "communication": int (1-10),\n'
@@ -483,20 +490,23 @@ async def entrypoint(ctx: JobContext):
 
                 eval_data = None
                 if genai_client:
-                    try:
-                        response = await asyncio.to_thread(
-                            genai_client.models.generate_content,
-                            model=GEMINI_MODEL,
-                            contents=eval_prompt,
-                            config=types.GenerateContentConfig(
-                                response_mime_type="application/json",
-                                temperature=0.2,
-                            ),
-                        )
-                        if response and response.text:
-                            eval_data = json.loads(response.text)
-                    except Exception as genai_err:
-                        logger.warning(f"Gemini fallback evaluation call failed: {genai_err}; using resilient scoring rubric")
+                    for model_name in [GEMINI_MODEL, *GEMINI_FALLBACK_MODELS]:
+                        try:
+                            response = await asyncio.to_thread(
+                                genai_client.models.generate_content,
+                                model=model_name,
+                                contents=eval_prompt,
+                                config=types.GenerateContentConfig(
+                                    response_mime_type="application/json",
+                                    temperature=0.2,
+                                ),
+                            )
+                            if response and response.text:
+                                eval_data = json.loads(response.text)
+                                logger.info(f"Fallback evaluation successfully generated with {model_name}")
+                                break
+                        except Exception as genai_err:
+                            logger.warning(f"Evaluation model {model_name} failed: {genai_err}. Trying next candidate...")
 
                 # Resilient guaranteed evaluation if LLM call failed or client was missing
                 if not eval_data:
