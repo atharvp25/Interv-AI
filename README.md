@@ -15,19 +15,19 @@
 
 ## 📌 Executive Summary
 
-Oral examinations, clinical vivas, and spoken case defenses are the gold standard for testing genuine comprehension, diagnostic reasoning, and professional poise. However, evaluating hundreds of students or job candidates orally has historically required immense faculty hours and recruiter scheduling.
+Oral examinations, clinical vivas, and spoken case defenses are one of the most effective ways to evaluate genuine comprehension, reasoning, and communicative clarity. However, conducting one-on-one spoken evaluations for large cohorts requires immense faculty hours and recruiter scheduling.
 
-Most voice AI tools today struggle with noticeable conversational delays (often taking 3 to 5+ seconds per response) or remain strictly restricted to software engineering coding in English.
+Many existing conversational voice systems experience noticeable latency pauses (often several seconds per turn) or are configured solely for generic English chatbots.
 
-**IntervAI** solves this. Built on full-duplex WebRTC, streaming Indic speech recognition, and high-throughput inference LPUs, IntervAI delivers **sub-second conversational turnaround (~0.85s, consistently under 1.5s)** across **11 Indian languages**. 
+**IntervAI** addresses this with a streaming, real-time voice pipeline. Built on WebRTC, streaming Indic speech recognition, and high-throughput inference, IntervAI delivers **sub-second conversational turnaround (~0.85s, consistently under 1.5s)** across **11 Indian languages**.
 
-From **MBBS clinical case vivas** and **appellate moot court defenses** to **enterprise BDA objection role-plays** and **hands-on STEM coding with oral Big-O defenses**, IntervAI empowers universities, educators, and enterprise recruiters to conduct authentic, anti-cheat oral evaluations at scale.
+With prompt-tailored tracks for **MBBS clinical case vivas**, **appellate moot court defenses**, **enterprise BDA objection handling**, and **STEM coding accompanied by oral logic defenses**, IntervAI provides educators, university departments, and hiring teams with a scalable platform for authentic spoken evaluations.
 
 ---
 
-## ⚡ Engineering Benchmarks: Under 1.5s End-to-End Latency
+## ⚡ Latency Benchmarks: Under 1.5s End-to-End Pipeline
 
-IntervAI replaces conventional audio batching with a fully streaming, bi-directional audio pipeline running over WebRTC.
+IntervAI replaces traditional multi-hop HTTP audio batching with a fully streaming, bi-directional audio pipeline over WebRTC.
 
 ```
 Candidate Speaks (WebRTC)
@@ -43,7 +43,7 @@ Candidate Speaks (WebRTC)
 ┌─────────────────────────────────────────────────────────┐
 │ 2. Groq LPU Voice Inference (Llama 3.3 70B Versatile)   │
 │    • Sub-180ms Time-To-First-Token (TTFT)               │
-│    • Zero thinking overhead & strict dialogue rules     │
+│    • Direct spoken conversational dialogue              │
 │    • Resilient auto-failover to Gemini 3.5 Flash-Lite   │
 └────────────────────────────┬────────────────────────────┘
                              │
@@ -51,19 +51,21 @@ Candidate Speaks (WebRTC)
 ┌─────────────────────────────────────────────────────────┐
 │ 3. Gnani Timbre v2.5 Persistent WebSocket TTS           │
 │    • Streaming PCM audio chunks over LiveKit room       │
-│    • Authentic Indic female intonation (Nalini)         │
+│    • Natural Indic voice models (e.g., Nalini)          │
 └────────────────────────────┬────────────────────────────┘
                              │
                              ▼
 Candidate Hears Response (Total Turnaround: 0.75s – 1.1s)
 ```
 
-| Metric / Pipeline Stage | Standard Batch Voice Bots | IntervAI (Production Measured) | Advantage |
+### Architectural Latency Comparison
+
+| Pipeline Stage | Baseline Architecture (Traditional HTTP REST Cascade) | IntervAI Streaming WebRTC Architecture | Technical Optimization |
 |---|---|---|---|
-| **Speech Recognition (STT)** | 1,200 – 1,800 ms | **280 – 350 ms** *(Gnani Prisma v3.0)* | **4× Faster** |
-| **LLM Inference (TTFT)** | 1,500 – 2,500 ms | **180 – 350 ms** *(Groq LPU Llama 3.3 70B)* | **6× Faster** |
-| **Speech Synthesis (TTS)** | 1,000 – 1,800 ms | **220 – 280 ms** *(Gnani Timbre v2.5)* | **5× Faster** |
-| **Total Conversational E2E** | **3.7 – 6.1 Seconds** | **0.75 – 1.1 Seconds (< 1.5s)** | **⚡ Real-Time Human Cadence** |
+| **Audio Ingestion & STT** | 1,200 – 1,800 ms *(Chunked audio upload & REST transcription)* | **280 – 350 ms** *(Gnani Prisma v3.0 WebSocket streaming)* | Eliminates file upload overhead; transcribes continuous audio frames. |
+| **LLM Inference (TTFT)** | 1,200 – 2,000 ms *(Standard cloud API queue & TTFT)* | **180 – 350 ms** *(Groq LPU Llama 3.3 70B)* | High token/s generation tailored for natural dialogue. |
+| **Speech Synthesis (TTS)** | 900 – 1,500 ms *(Full response audio file synthesis)* | **220 – 280 ms** *(Gnani Timbre v2.5 streaming chunks)* | Streams initial PCM audio packets to WebRTC track immediately. |
+| **Total Conversational E2E** | **3.3 – 5.3 Seconds** *(Noticeable conversational pause)* | **0.75 – 1.1 Seconds (< 1.5s target)** | **Natural conversational rhythm** |
 
 ---
 
@@ -89,46 +91,46 @@ IntervAI natively supports 11 Indian languages, handling code-mixed conversation
 
 ---
 
-## 🏛️ Multi-Discipline Oral Assessment Engines
+## 🏛️ Multi-Discipline Oral Assessment Tracks
 
-IntervAI houses specialized diagnostic engines calibrated for four distinct faculties:
+IntervAI provides prompt-tailored evaluation tracks designed for common university vivas and professional interview workflows:
 
 ### 1. 🩺 Medicine & Healthcare (Clinical Case Vivas)
-* **Target Audience:** MBBS faculty, nursing colleges, postgraduate clinical examiners, hospital recruiting.
-* **Assessment Scope:** Multi-turn patient scenario presentation, emergency triage sequences, differential diagnosis (e.g. acute coronary syndrome vs. pulmonary embolism), pharmacokinetics, and contraindications.
-* **Examiner Persona:** Senior Clinical Medicine Examiner using strict clinical checklists.
+* **Target Scenarios:** Medical and nursing colleges, clinical oral examinations, hospital staff screening.
+* **Assessment Scope:** Multi-turn patient scenario presentation, emergency triage sequences, differential diagnosis, pharmacokinetics, and contraindications derived from provided syllabi or case studies.
+* **Examiner Persona:** Senior Clinical Medicine Examiner using structured diagnostic checklists.
 
 ### 2. ⚖️ Law & Judiciary (Moot Court & Oral Defense)
-* **Target Audience:** Law school faculty, moot court organizers, senior advocates, legal compliance hiring.
-* **Assessment Scope:** Landmark Supreme Court precedents (*Maneka Gandhi*, *K.S. Puttaswamy*), constitutional doctrines (proportionality, substantive due process), statutory construction, and jurisdictional *locus standi*.
-* **Examiner Persona:** Presiding Appellate Moot Court Judge testing composure under judicial skepticism.
+* **Target Scenarios:** Law school moot courts, procedural oral defense, compliance role evaluations.
+* **Assessment Scope:** Landmark Supreme Court precedents (*Maneka Gandhi*, *K.S. Puttaswamy*), constitutional doctrines (proportionality, due process), statutory construction, and jurisdictional *locus standi*.
+* **Examiner Persona:** Presiding Appellate Moot Court Judge testing poise and legal reasoning under questioning.
 
-### 3. 📈 Business, MBA & Enterprise Sales (Consultative Pitch & Objection Handling)
-* **Target Audience:** B-School professors, enterprise sales directors, BDA hiring teams.
-* **Assessment Scope:** Cold pitch defense, unit economics, executive decision-making under budget freezes, competitor displacement, and pricing pushback role-plays in code-mixed Hinglish.
+### 3. 📈 Business, MBA & Sales (Consultative Pitch & Objection Handling)
+* **Target Scenarios:** B-School case presentations, corporate BDA hiring, customer-facing role-play.
+* **Assessment Scope:** Value proposition defense, unit economics, handling budget freeze objections, competitor differentiation, and pricing negotiation in English or code-mixed Hinglish.
 * **Examiner Persona:** Pragmatic Enterprise Buyer & Chief Commercial Officer.
 
-### 4. 💻 Engineering & STEM (Live Code Sandbox & Oral Big-O Defense)
-* **Target Audience:** Engineering college lab professors, technical recruiters, software architects.
-* **Assessment Scope:** Algorithmic problem-solving, clean code implementation, syntax debugging, and oral defense of time/space complexity to defeat copy-pasting and generative AI cheating.
+### 4. 💻 Engineering & STEM (Code Review & Spoken Logic Defense)
+* **Target Scenarios:** Computer science lab vivas, technical screenings, software engineering interviews.
+* **Assessment Scope:** Algorithmic problem-solving, code structure, edge case handling, and verbal defense of time/space complexity to test deep conceptual grasp.
 * **Examiner Persona:** Senior Technical Architect.
 
 ---
 
-## 💻 Live In-Browser Code Compiler with Voice-Trigger
+## 💻 In-Browser Code Editor & AI Code Review (with Voice Trigger)
 
-For technical faculties and software hiring, IntervAI bridges speech and code:
+For technical faculties and software hiring, IntervAI bridges spoken dialogue and code review:
 
-* **Voice-Triggered Activation:** When the examiner transitions to coding or when the candidate says *"Open the editor"* or *"Editor kholo"*, the IDE modal opens instantly without touching the keyboard.
-* **Multi-Language Compiler:** Supports **Python 3, C (C11), C++, and Java**.
-* **3 Guided Verification Attempts:** Evaluated in the background via Google Gemini acting as a strict compiler/linter. Diagnostic errors (e.g. *IndexError on line 4 for empty inputs*) are fed back through voice without giving away the solution.
-* **Oral Big-O Complexity Defense:** When code succeeds, the editor auto-closes and the examiner immediately challenges the candidate: *"Explain your time and space complexity out loud."*
+* **Voice-Triggered Activation:** When the examiner transitions to technical problem-solving or when the candidate says *"Open the editor"* or *"Editor kholo"*, the editor modal opens seamlessly in the browser.
+* **Multi-Language Syntax Support:** Supports **Python 3, C (C11), C++, and Java** with syntax highlighting.
+* **AI-Assisted Logic & Syntax Review:** Candidates write and submit their solution in the browser. IntervAI uses Google Gemini as an AI code reviewer to inspect code structure, identify syntax errors or logic flaws, and provide constructive oral hints without executing untrusted binary code on the host.
+* **Spoken Logic & Big-O Defense:** Once the code is analyzed, the examiner immediately asks the candidate to walk through their algorithm out loud and justify their time and space complexity, ensuring genuine comprehension.
 
 ---
 
-## 🛡️ Resilient Zero-Downtime Fallback Architecture
+## 🛡️ Resilient Multi-Model Fallback Architecture
 
-To ensure high-stakes university vivas and corporate interviews never freeze or crash mid-session, IntervAI features multi-layered resilience:
+To ensure university vivas and interview sessions remain stable even during upstream API degradation or rate-limits, IntervAI implements automated failover:
 
 ```
                   ┌──────────────────────────────┐
@@ -139,8 +141,8 @@ To ensure high-stakes university vivas and corporate interviews never freeze or 
                  │                               │
         [Primary: Groq LPU]             [Failover: Gemini Flash-Lite]
       Llama 3.3 70B Versatile                 gemini-3.5-flash-lite
-      • Ultra-fast (<180ms TTFT)              • Triggered automatically on
-      • Zero thinking latency                   Groq 429 / network error
+      • Low-latency (<180ms TTFT)             • Triggered automatically on
+      • Natural conversational dialogue         Groq 429 / network error
                  │                               │
                  └───────────────┬───────────────┘
                                  │
@@ -154,14 +156,14 @@ To ensure high-stakes university vivas and corporate interviews never freeze or 
                      Gnani Timbre v2.5 TTS
 ```
 
-* **Dynamic Evaluation Model Cascade:** When grading final scorecards, the system iterates across `[gemini-3.5-flash-lite, gemini-3.8-flash, gemini-3.1-flash-lite]` to guarantee reports are generated even during regional API provider outages.
-* **Automatic Session Recovery:** If WebRTC drops due to client network fluctuation, candidate session tokens and partial transcripts are preserved in MongoDB with automatic reconnection.
+* **Dynamic Evaluation Cascade:** When generating comprehensive post-session scorecards, the backend gracefully cascades across `[gemini-3.5-flash-lite, gemini-3.8-flash, gemini-3.1-flash-lite]` if an individual model endpoint is temporarily unavailable.
+* **Session Continuity:** Session state, transcripts, and evaluation data are preserved in MongoDB, allowing candidate recovery if the client browser temporarily disconnects.
 
 ---
 
-## 📊 Calibrated 6-Axis Evaluation Scorecard
+## 📊 Structured 6-Axis Evaluation Rubric
 
-IntervAI eliminates the common flaw where LLMs lazily award generic median scores (5/10). Every session is evaluated against strict rubric anchors:
+Rather than relying on unguided LLM summaries that often generate generic median scores, IntervAI evaluates session transcripts against explicit rubric anchors across six dimensions:
 
 ```
                      Technical / Domain Accuracy (1-10)
@@ -179,14 +181,14 @@ IntervAI eliminates the common flaw where LLMs lazily award generic median score
                          Composite Grade (1-10)
 ```
 
-1. **Domain Accuracy (7–10 for correct, 5–6 for partial, 1–4 for incorrect):** Rigorously grades medical triage steps, case law citations, or algorithmic logic.
-2. **Analytical Depth:** Evaluates whether candidate explained the *why* and handled edge cases.
-3. **Verbal Articulation & Fluency:** Assesses clarity and structured delivery in the selected language.
-4. **Professional Composure:** Measures tone stability and poise under counter-arguments.
-5. **Thoroughness:** Checks if inquiries were comprehensively addressed without evasion.
-6. **Composite Grade:** Weighted overall rating.
+1. **Domain Accuracy (7–10 correct, 5–6 partial, 1–4 incorrect):** Evaluates clinical diagnosis, legal citations, or technical logic based on the user's reference context.
+2. **Analytical Depth:** Assesses whether the candidate explained the underlying rationale and considered trade-offs.
+3. **Verbal Articulation & Fluency:** Evaluates clarity, sentence structure, and coherence in the candidate's chosen language.
+4. **Professional Composure:** Measures confidence, tone stability, and poise under follow-up questioning.
+5. **Thoroughness:** Assesses how completely inquiries and edge cases were addressed.
+6. **Composite Grade:** Balanced overall score reflecting performance across all axes.
 
-* **PDF Export & Class Viva Roster:** Teachers and recruiters can export clean, print-ready PDF scorecards with timestamps, candidate details, identified strengths, and growth recommendations.
+* **PDF Export & Roster Management:** Teachers and recruiters can export clean, print-ready PDF scorecards containing candidate metrics, timestamps, identified strengths, and targeted improvement areas.
 
 ---
 
@@ -272,7 +274,7 @@ IntervAI/
 | **Voice LLM (Primary)** | Groq LPU — Llama 3.3 70B Versatile (< 180ms TTFT) |
 | **Voice LLM (Failover)**| Google Gemini 3.5 Flash-Lite via `google-genai` SDK |
 | **Text-to-Speech (TTS)** | Gnani.ai Timbre v2.5 Persistent WebSocket Streaming |
-| **Code Execution** | Sandboxed In-Browser Monaco/CodeMirror editor (Python 3, C, C++, Java) |
+| **Code Evaluation** | In-Browser Editor with Gemini AI syntax & logic review (Python 3, C, C++, Java) |
 | **Backend API** | FastAPI, Python 3.12, Motor (Async MongoDB), PyJWT, Uvicorn |
 | **Database** | MongoDB (sessions, assessments, evaluations, users) |
 | **Frontend UI** | React 18, Vite, Framer Motion, Lucide Icons, WCAG AA Design System |
@@ -351,17 +353,18 @@ Open **`http://localhost:5173`** in Chrome to launch IntervAI.
 
 ---
 
-## 🏆 Why IntervAI Wins
+## 🏛️ Pipeline Comparison: Traditional Approach vs. IntervAI Streaming WebRTC
 
-| Capability | IntervAI | Standard Batch Voice Bots |
+| Architectural Dimension | Traditional Non-Streaming Pipeline | IntervAI Streaming WebRTC Pipeline |
 |---|---|---|
-| **E2E Conversational Latency** | **⚡ 0.85s (Strictly < 1.5s)** | 3.7 – 6.1s (Unnatural pauses) |
-| **Language Coverage** | **11 Indian Languages + Hinglish** | English only |
-| **Discipline Support** | **Medicine, Law, MBA, Core Eng, Tech** | Tech/Coding only |
-| **Anti-Cheat Defense** | **Live Voice + Oral Big-O Defense** | Multiple-choice or copy-pasteable text |
-| **Editor Workflow** | **Voice-triggered compiler modal** | Manual tabs or external links |
-| **Failover Architecture** | **Groq LPU ↔ Gemini Flash-Lite** | Single point of failure |
-| **Scorecard Quality** | **Calibrated 6-axis rubric (No flat 5s)** | Generic LLM summary |
+| **Audio Transport** | Audio recorded into local blobs, uploaded via HTTP POST | Bi-directional, full-duplex WebRTC audio streaming via LiveKit Cloud |
+| **Conversational Turnaround** | 3.3 – 5.3s (Multi-hop file upload + batched inference) | **0.75 – 1.1s (< 1.5s total)** (Continuous audio frame streaming) |
+| **Indic Speech Recognition** | Standard generic ASR without specialized vocabulary | Gnani Prisma v3.0 with dynamic syllabus/JD keyword injection |
+| **Language Flexibility** | Restricted to English or basic translation layers | **11 Indian Languages + Hinglish** with native accent handling |
+| **Discipline Adaptability** | Monolithic prompt for all candidates | 4 prompt-tailored tracks (Medicine viva, Law moot court, B-School sales, STEM) |
+| **Coding Assessment** | Static text submissions or external coding links | Voice-triggered in-browser editor with Gemini AI logic review + spoken Big-O defense |
+| **Model Redundancy** | Single API endpoint (susceptible to 429/500 errors) | Multi-model fallback: Groq LPU Llama 3.3 70B ↔ Google Gemini 3.5 Flash-Lite |
+| **Scorecard Quality** | Freeform text generation prone to median scores | Structured 6-axis rubric with explicit criterion bands & printable PDF export |
 
 ---
 
