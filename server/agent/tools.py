@@ -99,6 +99,8 @@ class AssistantFnc(llm.Toolset):
                 meta["share_with_taker"] = session_doc.get("share_with_taker", meta.get("share_with_taker", False))
                 meta["role_title"] = session_doc.get("role_title") or meta.get("role_title")
                 meta["track"] = session_doc.get("track") or meta.get("track")
+                meta["discipline"] = session_doc.get("discipline") or meta.get("discipline") or meta.get("track")
+                meta["specialization"] = session_doc.get("specialization") or meta.get("specialization")
                 meta["language"] = session_doc.get("language") or meta.get("language")
                 meta["jd_file_id"] = session_doc.get("jd_file_id") or meta.get("jd_file_id")
 
@@ -134,6 +136,8 @@ class AssistantFnc(llm.Toolset):
             "is_practice": is_practice,
             "assessor_id": assessor_id,
             "assessor_username": assessor_username,
+            "owner_id": assessor_id,
+            "owner_username": assessor_username,
             "taker_user_id": taker_user_id,
             "taker_username": taker_username,
             "taker_name": taker_name,
@@ -142,6 +146,8 @@ class AssistantFnc(llm.Toolset):
             "share_with_taker": share_with_taker,
             "role_title": meta.get("role_title", "Assessment"),
             "track": meta.get("track", "tech"),
+            "discipline": meta.get("discipline", meta.get("track", "tech")),
+            "specialization": meta.get("specialization", ""),
             "language": meta.get("language", "hinglish"),
             "timestamp": now_iso,
             "jd_id": jd_file_id,

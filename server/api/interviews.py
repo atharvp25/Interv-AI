@@ -587,6 +587,12 @@ async def get_token(
         "username": taker_username,
         "language": resolved_lang,
         "track": resolved_track,
+        "discipline": session_doc.get("discipline") or resolved_track,
+        "specialization": session_doc.get("specialization", ""),
+        "question_bank": session_doc.get("question_bank", []),
+        "teacher_instructions": session_doc.get("teacher_instructions", ""),
+        "examiner_tone": session_doc.get("examiner_tone", "socratic"),
+        "rubric_focus": session_doc.get("rubric_focus", []),
         "keywords": keywords,
     })
 
@@ -676,7 +682,15 @@ async def get_evaluations(
     }
 
     if role in ASSESSOR_ROLES:
-        assigned_query = {"is_practice": False, "assessor_id": user_id}
+        assigned_query = {
+            "is_practice": False,
+            "$or": [
+                {"assessor_id": user_id},
+                {"assessor_username": username},
+                {"owner_id": user_id},
+                {"owner_username": username},
+            ],
+        }
         if assessment_id:
             assigned_query["assessment_id"] = assessment_id
     else:

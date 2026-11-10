@@ -231,12 +231,19 @@ def get_interview_instructions(
     # Assemble teacher custom guidance section
     guidance_section = ""
     if teacher_instructions and teacher_instructions.strip():
-        guidance_section = f"\nSPECIAL EXAMINER GUIDANCE (TEACHER / RECRUITER):\n- {teacher_instructions.strip()[:350]}\n"
+        guidance_section = (
+            f"\n======================================================\n"
+            f"CRITICAL INSTRUCTOR DIRECTIVE (MUST STRICTLY FOLLOW):\n"
+            f"{teacher_instructions.strip()[:1000]}\n"
+            f"======================================================\n"
+            f"MANDATORY: You must strictly adhere to the instructor directives above. "
+            f"Focus on the requested topics, depth, and strictness without deviation.\n"
+        )
 
     # Coding vs Oral Viva instruction
     mode_rule = (
         "PRACTICAL CODING CHALLENGE (TECH TRACK ONLY):\n"
-        "- When moving to the coding challenge, say: 'Great. Now let's move to the practical coding challenge. The code editor is opening on your screen now. Please write a function to...' (Python, C, C++, Java supported).\n"
+        "- When moving to the coding challenge, invoke enable_code_editor and say: 'Great. Now let\\'s move to the practical coding challenge. The code editor is opening on your screen now. Please write a function to...' (Python, C, C++, Java supported).\n"
         "- If code fails compiler check, give a 1-sentence diagnostic without giving away the solution. If correct, commend them briefly.\n"
         "- Ask them to defend time and space complexity (Big-O) aloud."
         if is_coding
@@ -253,12 +260,12 @@ def get_interview_instructions(
 Language: {language_label} | Candidate: {clean_name} (Verified)
 
 {guide['lock_rule']}
-
+{guidance_section}
 EXAMINATION PROFILE:
 - Stream / Focus: {spec_label}
 - Core Evaluation Competencies: {disc_meta['evaluation_points']}
 - Persona Tone: {tone_instruction}
-{guidance_section}{qb_section}
+{qb_section}
 STRICT SPOKEN DIALOGUE RULES (CRITICAL FOR LIVE AUDIO):
 1. PURE HUMAN SPOKEN CONVERSATION ONLY:
    - Speak ONLY what an authentic human examiner says out loud.
@@ -288,9 +295,10 @@ def get_candidate_greeting(
     track: str = "tech",
     language_key: str = "hinglish",
     discipline: str = "",
+    first_question: str = "",
 ) -> str:
     """Generate a warm, female, zero-LLM greeting addressing candidate by their verified name
-    and discipline in the selected language."""
+    and discipline in the selected language. If first_question is provided, asks it directly."""
     raw_name = (candidate_name or "Candidate").strip()
     if raw_name and not raw_name.isupper() and not raw_name.startswith("taker_"):
         name = raw_name.title()
@@ -301,6 +309,18 @@ def get_candidate_greeting(
 
     role = (role_title or "Oral Assessment").strip()
     disc_key = _resolve_discipline_key(track, discipline)
+    clean_q = first_question.strip() if first_question else ""
+
+    # If instructor or curriculum first question is provided, prioritize it directly!
+    if clean_q:
+        if language_key == "hi-IN":
+            return f"नमस्ते {name}! IntervAI पर आपका स्वागत है। मैं आपकी परीक्षक नलिनी हूँ। आज हम {role} का असेसमेंट शुरू करेंगे। चलिए सीधे शुरू करते हैं: {clean_q}"
+        elif language_key == "mr-IN":
+            return f"नमस्कार {name}! IntervAI वर आपले स्वागत आहे. मी तुमची परीक्षक नलिनी आहे. आज आपण {role} चे असेसमेंट सुरू करूया. चला सुरुवात करूया: {clean_q}"
+        elif language_key == "en-IN":
+            return f"Hello {name}! Welcome to IntervAI. I am Professor Nalini, your examiner today for {role}. Let's begin: {clean_q}"
+        else:
+            return f"Hello {name}! Welcome to IntervAI. Main aaj aapki examiner Nalini hoon. Aaj hum aapka {role} assessment conduct karenge. Let's get started: {clean_q}"
 
     # 1. Medicine & Healthcare
     if disc_key == "medical":
