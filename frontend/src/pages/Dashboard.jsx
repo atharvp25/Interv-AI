@@ -15,7 +15,6 @@ import RecruiterDashboardView from '../components/roles/RecruiterDashboardView'
 import TeacherDashboardView from '../components/roles/TeacherDashboardView'
 import StudentDashboardView from '../components/roles/StudentDashboardView'
 import CandidateDashboardView from '../components/roles/CandidateDashboardView'
-import PlatformBenchmarkCards from '../components/PlatformBenchmarkCards'
 import { SkeletonCard } from '../components/ui/Skeleton'
 
 const GUEST_SAMPLE_EVALUATIONS = {
@@ -810,9 +809,6 @@ export default function Dashboard() {
             <span>{error}</span>
           </div>
         )}
-
-        {/* ── 5-CARD PLATFORM BENCHMARK & DOMAIN ADVANTAGE SHOWCASE ── */}
-        <PlatformBenchmarkCards />
 
         {loading ? (
           <div style={{ display: 'grid', gap: '16px' }}>
