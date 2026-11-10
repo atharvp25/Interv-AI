@@ -35,18 +35,17 @@ class AssistantFnc(llm.Toolset):
                 json.dumps({"type": command}).encode("utf-8")
             )
 
-    @llm.function_tool(description="Internal background hook to open live code editor on screen. Never announce or speak this tool name out loud.")
+    @llm.function_tool(description="Open and display the live interactive code editor on the candidate's screen. Call this tool whenever giving a coding task or challenge OR whenever the candidate asks to open the editor or write code.")
     async def enable_code_editor(self):
-        if self.session_meta.get("track") != "tech":
-            return "Code editor is disabled for non-coding oral viva assessments. Continue strictly with the voice oral conversation."
         if self._editor_opened:
-            logger.info("Code editor already open, skipping duplicate open")
-            return "Code editor is already open. Just wait for the candidate to submit their code."
-        logger.info("Opening code editor for candidate (LLM tool call)")
+            logger.info("Code editor already open, re-confirming to candidate frontend")
+            await self._send_editor_command("enable_code_editor")
+            return "The code editor is already active on the candidate's screen. Acknowledge this naturally."
+        logger.info("Opening code editor on candidate screen (tool invoked)")
         self._code_attempts = 0  # Reset attempts for new coding question
         self._editor_opened = True
         await self._send_editor_command("enable_code_editor")
-        return "Success. The code editor is now open. DO NOT read this message out loud. Just wait for the candidate to submit their code."
+        return "Success. The live code editor is now open on the candidate's screen. Acknowledge this warmly (e.g. 'The code editor is open on your screen now. Please write your solution in the editor.') and state the problem."
 
     @llm.function_tool(description="Internal background hook to close code editor. Never announce or speak this tool name out loud.")
     async def disable_code_editor(self):

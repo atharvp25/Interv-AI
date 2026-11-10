@@ -242,8 +242,12 @@ def get_interview_instructions(
 
     # Coding vs Oral Viva instruction
     mode_rule = (
-        "PRACTICAL CODING CHALLENGE (TECH TRACK ONLY):\n"
-        "- When moving to the coding challenge, invoke enable_code_editor and say: 'Great. Now let\\'s move to the practical coding challenge. The code editor is opening on your screen now. Please write a function to...' (Python, C, C++, Java supported).\n"
+        "LIVE CODE EDITOR & PRACTICAL CODING CHALLENGE (TECH / CODING TRACK):\n"
+        "- You HAVE FULL CONTROL over the live code editor on the candidate's screen.\n"
+        "- Whenever you transition to the practical coding challenge OR whenever the candidate asks to open the editor or write code (e.g. 'open the editor', 'can you open the editor', 'editor open karo', 'editor kholo', 'where do I code'):\n"
+        "  1. ALWAYS invoke your `enable_code_editor` tool immediately.\n"
+        "  2. Say: 'The code editor is open on your screen now. Please write your solution in the editor.'\n"
+        "- NEVER say 'I cannot open the editor', 'I don't have access to your screen', or 'I won't be able to open it'. You CAN open it, and you DO open it using your `enable_code_editor` tool.\n"
         "- If code fails compiler check, give a 1-sentence diagnostic without giving away the solution. If correct, commend them briefly.\n"
         "- Ask them to defend time and space complexity (Big-O) aloud."
         if is_coding

@@ -646,6 +646,23 @@ async def entrypoint(ctx: JobContext):
                 logger.info(f"Candidate asked about interview completion ('{text}') after {turn_count} turns -> executing conclusion")
                 asyncio.create_task(execute_room_conclusion(trigger_source="candidate_query"))
 
+        # Immediate Code Editor Trigger if candidate asks for editor or asks to write code
+        if text and not fnc._editor_opened:
+            t_low = text.lower()
+            editor_request_phrases = [
+                "open the editor", "open editor", "open the code editor", "open code editor",
+                "can you open the editor", "please open the editor", "open my editor",
+                "show the editor", "show editor", "where is the editor", "where to write code",
+                "i want to code", "let me code", "give me coding", "coding question",
+                "editor kholo", "editor open karo", "editor chalu karo", "code editor open",
+                "code likhna hai", "editor open", "एडिटर खोलो", "एडिटर ओपन करो",
+                "एडिटर उघडा", "एडिटर चालू करा", "कोड एडिटर"
+            ]
+            if any(p in t_low for p in editor_request_phrases):
+                logger.info(f"Candidate explicitly requested code editor ('{text}') -> opening live code editor immediately")
+                fnc._editor_opened = True
+                asyncio.create_task(fnc._send_editor_command("enable_code_editor"))
+
     @session.on("conversation_item_added")
     def on_conversation_item_added(ev):
         item = getattr(ev, "item", None)
@@ -655,19 +672,29 @@ async def entrypoint(ctx: JobContext):
                 session_transcript_turns.append(f"ASSISTANT: {text.strip()}")
             tracker.record_llm_response(text)
 
-            # Auto-open code editor ONLY for tech track, after at least 2 oral turns,
-            # and ONLY when assistant explicitly transitions to live editor coding
-            candidate_turns = sum(1 for t in session_transcript_turns if t.startswith("USER:"))
-            if track == "tech" and not fnc._editor_opened and candidate_turns >= 2:
+            # Auto-open code editor if assistant presents a coding challenge or mentions the editor
+            if not fnc._editor_opened:
                 t_lower = text.lower()
-                explicit_coding_triggers = [
+                candidate_turns = sum(1 for t in session_transcript_turns if t.startswith("USER:"))
+                coding_action_triggers = [
+                    # Explicit editor phrases
                     "editor is opening", "code editor is opening", "open the code editor",
-                    "opening the code editor", "in the code editor", "editor mein code",
-                    "editor me code", "write a function in the editor", "write code in the editor",
-                    "कोड एडिटर उघडत आहे", "कोड एडिटर ओपन", "कोड एडिटर में", "कोड लिहा एडिटरमध्ये",
+                    "opening the code editor", "in the code editor", "on your screen now",
+                    "editor mein code", "editor me code", "write a function in the editor",
+                    # Task assignment phrases
+                    "write a function to", "write a function that", "write a program to",
+                    "write a python function", "implement a function", "implement a solution",
+                    "solve this coding problem", "coding challenge:", "practical coding challenge:",
+                    # Hindi / Hinglish phrases
+                    "code likhiye", "ek function likhiye", "function likhiye", "program likhiye",
+                    "editor mein", "editor me", "कोड एडिटर", "कोड लिखिए", "फंक्शन लिखिए",
+                    # Marathi phrases
+                    "कोड लिहा", "फंक्शन लिहा", "एडिटरमध्ये", "प्रोग्राम लिहा"
                 ]
-                if any(k in t_lower for k in explicit_coding_triggers):
-                    logger.info(f"Auto-triggering enable_code_editor from assistant transition after {candidate_turns} oral turns: '{text[:60]}...'")
+                has_explicit_mention = any(p in t_lower for p in ["editor is opening", "open the code editor", "in the code editor", "editor mein", "editor me", "कोड एडिटर"])
+                has_task_phrase = any(k in t_lower for k in coding_action_triggers)
+                if has_explicit_mention or (candidate_turns >= 1 and has_task_phrase):
+                    logger.info(f"Auto-triggering enable_code_editor from assistant transition (turns={candidate_turns}): '{text[:60]}...'")
                     fnc._editor_opened = True
                     asyncio.create_task(fnc._send_editor_command("enable_code_editor"))
 

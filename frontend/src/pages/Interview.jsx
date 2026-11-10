@@ -336,11 +336,12 @@ export default function Interview() {
                 </div>
               )}
 
-              {sessionTrack === 'tech' && (
+              {(!sessionTrack || sessionTrack === 'tech' || isCodeEditorOpen) && (
                 <button
                   type="button"
                   onClick={() => setIsCodeEditorOpen((v) => !v)}
                   className={`btn-code-toggle ${isCodeEditorOpen ? 'active' : ''}`}
+                  title="Toggle live coding workspace"
                 >
                   <TerminalSquare size={14} strokeWidth={1.5} />
                   <span>{isCodeEditorOpen ? 'Hide code editor' : 'Open code editor'}</span>
