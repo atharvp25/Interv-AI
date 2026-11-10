@@ -60,14 +60,38 @@ AGENT_NAME = "intervai-agent"
 
 import re
 
+# ── RUNTIME PATCH: PREVENT GEMINI INTERNAL THOUGHT PARTS FROM LEAKING ────────
+# livekit-plugins-google's LLMStream._parse_part does not check `part.thought`,
+# causing Gemini 2.5/3.x internal chain-of-thought (`part.thought == True`) to
+# be emitted as spoken assistant text. We patch `_parse_part` at import time
+# to drop any thought parts immediately.
+try:
+    from livekit.plugins.google import llm as _google_llm_mod
+    _orig_google_parse_part = _google_llm_mod.LLMStream._parse_part
+
+    def _patched_google_parse_part(self, id: str, part: types.Part):
+        if getattr(part, "thought", False):
+            return None
+        return _orig_google_parse_part(self, id, part)
+
+    _google_llm_mod.LLMStream._parse_part = _patched_google_parse_part
+except Exception as _patch_err:
+    logger.warning(f"Could not apply google.llm thought filter patch: {_patch_err}")
+
+
 def _sanitize_voice_chunk(text: str) -> str:
     if not text:
         return text
-    # 1. Strip bracketed annotations like [Calls enable_code_editor tool]
-    t = re.sub(r'\[.*?\]', '', text)
-    # 2. Strip bare tool names if leaked into spoken output
+    # 1. Strip complete <think>...</think> or <reasoning>...</reasoning> blocks if in a single chunk
+    t = re.sub(r'<(?:think|reasoning|thought)>.*?</(?:think|reasoning|thought)>', '', text, flags=re.IGNORECASE | re.DOTALL)
+    # 2. Strip any stray opening/closing thought tags
+    t = re.sub(r'</?(?:think|reasoning|thought)>', '', t, flags=re.IGNORECASE)
+    # 3. Strip bracketed annotations like [Calls enable_code_editor tool] or parenthetical internal notes
+    t = re.sub(r'\[.*?\]', '', t)
+    t = re.sub(r'\((?:note|thinking|thought|assuming|internal|candidate meant|candidate tried)[^)]*\)', '', t, flags=re.IGNORECASE)
+    # 4. Strip bare tool names if leaked into spoken output
     t = re.sub(r'\b(enable_code_editor|disable_code_editor|submit_evaluation)\b', '', t, flags=re.IGNORECASE)
-    # 3. Strip spoken question tag prefixes like 'Question #1:', '#tag 1:', 'Q1:'
+    # 5. Strip spoken question tag prefixes like 'Question #1:', '#tag 1:', 'Q1:'
     t = re.sub(r'(?:^|\b|\s)(?:#tag\s*\d+|Question\s*#?\s*(?:tag\s*)?\d+|Q\d+)\s*[:.-]?', ' ', t, flags=re.IGNORECASE)
     return t
 
@@ -85,37 +109,79 @@ class ResilientVoiceStream(llm.LLMStream):
         self._kwargs = kwargs
 
     async def _run(self):
+        in_think_block = False
+
         def _process_chunk(chunk):
+            nonlocal in_think_block
             if chunk.delta and chunk.delta.content:
-                chunk.delta.content = _sanitize_voice_chunk(chunk.delta.content)
+                raw = chunk.delta.content
+                lower_raw = raw.lower()
+
+                # Stateful multi-chunk <think>...</think> suppression
+                if in_think_block:
+                    end_idx = lower_raw.find("</think>")
+                    if end_idx >= 0:
+                        in_think_block = False
+                        raw = raw[end_idx + 8:]
+                    else:
+                        chunk.delta.content = ""
+                        return chunk
+
+                start_idx = raw.lower().find("<think>")
+                if start_idx >= 0:
+                    before = raw[:start_idx]
+                    after = raw[start_idx + 7:]
+                    end_idx = after.lower().find("</think>")
+                    if end_idx >= 0:
+                        raw = before + after[end_idx + 8:]
+                    else:
+                        in_think_block = True
+                        raw = before
+
+                chunk.delta.content = _sanitize_voice_chunk(raw)
             return chunk
+
+        async def _consume_stream(stream_obj):
+            nonlocal in_think_block
+            in_think_block = False
+            async for chunk in stream_obj:
+                processed = _process_chunk(chunk)
+                if (
+                    processed.delta
+                    and processed.delta.content == ""
+                    and not getattr(processed.delta, "tool_calls", None)
+                    and not getattr(processed, "usage", None)
+                ):
+                    continue
+                self._event_ch.send_nowait(processed)
+
+        if self._parent._active_provider == "gemini" or self._primary_llm is None:
+            fallback_stream = self._fallback_llm.chat(chat_ctx=self._chat_ctx, **self._kwargs)
+            await _consume_stream(fallback_stream)
+            return
 
         try:
             primary_stream = self._primary_llm.chat(chat_ctx=self._chat_ctx, **self._kwargs)
-            async for chunk in primary_stream:
-                self._event_ch.send_nowait(_process_chunk(chunk))
+            await _consume_stream(primary_stream)
         except Exception as err:
             logger.warning(
                 f"⚡ Groq LLM streaming failed ({err}). Seamlessly failing over to Google Gemini Flash-Lite..."
             )
             self._parent._active_provider = "gemini"
             fallback_stream = self._fallback_llm.chat(chat_ctx=self._chat_ctx, **self._kwargs)
-            async for chunk in fallback_stream:
-                self._event_ch.send_nowait(_process_chunk(chunk))
+            await _consume_stream(fallback_stream)
 
 
 class ResilientVoiceLLM(llm.LLM):
     """Voice LLM that uses Groq LPU for sub-200ms TTFT, with automatic failover to
     Gemini Flash-Lite if Groq hits token rate limits (429) or connection errors."""
-    def __init__(self, primary: llm.LLM, fallback: llm.LLM):
+    def __init__(self, primary: llm.LLM | None, fallback: llm.LLM):
         super().__init__()
         self._primary = primary
         self._fallback = fallback
-        self._active_provider = "groq"
+        self._active_provider = "groq" if primary is not None else "gemini"
 
     def chat(self, *, chat_ctx: llm.ChatContext, **kwargs) -> llm.LLMStream:
-        if self._active_provider == "gemini":
-            return self._fallback.chat(chat_ctx=chat_ctx, **kwargs)
         return ResilientVoiceStream(self, self._primary, self._fallback, chat_ctx=chat_ctx, **kwargs)
 
 
@@ -404,16 +470,22 @@ async def entrypoint(ctx: JobContext):
 
     if GROQ_API_KEY:
         logger.info(f"⚡ Using Ultra-Fast Groq LPU engine ({GROQ_MODEL}) with automatic Gemini failover")
+        groq_kwargs = (
+            {"extra_body": {"reasoning_format": "hidden"}}
+            if any(k in GROQ_MODEL.lower() for k in ("qwen", "deepseek", "r1"))
+            else {}
+        )
         groq_llm = openai.LLM(
             model=GROQ_MODEL,
             api_key=GROQ_API_KEY,
             base_url="https://api.groq.com/openai/v1",
             temperature=0.5,
+            **groq_kwargs,
         )
         voice_llm = ResilientVoiceLLM(primary=groq_llm, fallback=gemini_llm)
     else:
         logger.info(f"Using Google Gemini engine ({GEMINI_MODEL}) for voice generation")
-        voice_llm = gemini_llm
+        voice_llm = ResilientVoiceLLM(primary=None, fallback=gemini_llm)
 
     # Fast conversational turn-taking: 250ms silence detection + preemptive synthesis
     session = AgentSession(

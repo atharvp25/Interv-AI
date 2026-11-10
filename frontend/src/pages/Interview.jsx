@@ -635,14 +635,26 @@ function RoomEventListener({ onOpenEditor, onCloseEditor, onInterviewCompleted, 
       } catch (e) {}
     }
 
+    const sanitizeAgentTranscript = (raw) => {
+      if (!raw) return ''
+      return raw
+        .replace(/<(?:think|reasoning|thought)>[\s\S]*?<\/(?:think|reasoning|thought)>/gi, '')
+        .replace(/<\/?(?:think|reasoning|thought)>/gi, '')
+        .replace(/\[.*?\]/g, '')
+        .replace(/\((?:note|thinking|thought|assuming|internal|candidate meant|candidate tried)[^)]*\)/gi, '')
+        .trim()
+    }
+
     const handleTranscription = (segments, participant) => {
       if (!segments || !onTranscript) return
       segments.forEach((seg) => {
         if (seg.final && seg.text?.trim()) {
           const isAgent = participant?.identity?.toLowerCase().includes('agent') || !participant?.isLocal
+          const cleanedText = isAgent ? sanitizeAgentTranscript(seg.text) : seg.text.trim()
+          if (!cleanedText) return
           onTranscript({
             speaker: isAgent ? 'Interviewer' : 'Candidate',
-            text: seg.text.trim(),
+            text: cleanedText,
           })
         }
       })
