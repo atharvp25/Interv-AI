@@ -37,8 +37,8 @@ class AssistantFnc(llm.Toolset):
 
     @llm.function_tool(description="Internal background hook to open live code editor on screen. Never announce or speak this tool name out loud.")
     async def enable_code_editor(self):
-        if self.session_meta.get("track") == "bda":
-            return "Code editor is disabled for BDA/Sales assessments. Continue with the voice conversation."
+        if self.session_meta.get("track") != "tech":
+            return "Code editor is disabled for non-coding oral viva assessments. Continue strictly with the voice oral conversation."
         if self._editor_opened:
             logger.info("Code editor already open, skipping duplicate open")
             return "Code editor is already open. Just wait for the candidate to submit their code."

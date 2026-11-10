@@ -790,23 +790,39 @@ async def entrypoint(ctx: JobContext):
         except Exception as e:
             pass
 
-    # ── TOKEN OPTIMIZATION: JD Compaction ──────────────────────────────────────
-    # Compact JD to 350 chars max for ultra-lean turn prompts (<400 tokens per turn)
-    compact_jd = (jd_content[:350] + "...") if len(jd_content) > 350 else jd_content
+    # ── TOKEN-LEAN ASSESSMENT CONTEXT PACKING ─────────────────────────────────
+    discipline = context.get("discipline") or metadata.get("discipline") or track
+    specialization = context.get("specialization") or metadata.get("specialization") or role_title
+    question_bank = context.get("question_bank") or metadata.get("question_bank") or []
+    teacher_instructions = context.get("teacher_instructions") or metadata.get("teacher_instructions") or ""
+    examiner_tone = context.get("examiner_tone") or metadata.get("examiner_tone") or "socratic"
+
+    blueprint_summary = []
+    if specialization and specialization != role_title:
+        blueprint_summary.append(f"Focus Area: {specialization}")
+    if teacher_instructions:
+        blueprint_summary.append(f"Examiner Guidance: {teacher_instructions[:250]}")
+    if jd_content and len(jd_content) > 10:
+        blueprint_summary.append(f"Syllabus / Blueprint:\n{jd_content[:350].strip()}")
+
+    context_block = "\n".join(blueprint_summary) if blueprint_summary else (jd_content[:350] if jd_content else "Multi-Disciplinary Assessment")
 
     base_instructions = get_interview_instructions(
         track=track,
         language_label=lang_profile["label"],
         candidate_name=taker_name,
         language_key=language_key,
+        discipline=discipline,
+        specialization=specialization,
+        question_bank=question_bank,
+        teacher_instructions=teacher_instructions,
+        examiner_tone=examiner_tone,
     )
     custom_instructions = (
         f"{base_instructions}\n\n"
-        f"CANDIDATE NAME: {taker_name}\n"
-        f"INTERVIEW ROLE: {role_title} (Track: {track.upper()})\n"
-        f"JOB DESCRIPTION FOR THIS INTERVIEW:\n"
+        f"ASSESSMENT CONTEXT:\n"
         f"-------------\n"
-        f"{compact_jd}\n"
+        f"{context_block}\n"
         f"-------------"
     )
 
@@ -826,6 +842,7 @@ async def entrypoint(ctx: JobContext):
         role_title=role_title,
         track=track,
         language_key=language_key,
+        discipline=discipline,
     )
     logger.info(f"Speaking initial greeting (Zero-LLM latency): {initial_greeting}")
     session.say(
